@@ -40,7 +40,7 @@ public class EstadoControler {
 	
 	//Comando GET
 	@GetMapping
-	public List<Estado> listar() {
+	public List<Estado> listar() { // -> /estados
 		return estadoRepository.findAll();
 	}
 	
@@ -72,12 +72,24 @@ public class EstadoControler {
 	@PostMapping 
 	@ResponseStatus(HttpStatus.CREATED)
 	public Estado adicionar(@RequestBody Estado estado) { 
+		 /*Modelo:
+			{
+			    "nome":"nome",
+			    "sigla": "sigla"
+			}
+		 */
 		return estadoServices.salvar(estado);
 	}
 	
 	//Comandos PUT
 	@PutMapping("/{estadoId}") 
 	public ResponseEntity<?> atualizar(@PathVariable("estadoId") Long Id, @RequestBody Estado estado) {
+		/*Modelo:
+		{
+		    "nome":"nome",
+		    "sigla": "sigla"
+		}
+		*/
 		try {
 			Optional<Estado> estadoAtual = estadoRepository.findById(Id);
 	
@@ -97,16 +109,16 @@ public class EstadoControler {
 	
 	
 	//Comando PATCH
-		@PatchMapping("/{marketplaceId}") 
-		public ResponseEntity<?> atualizaParcial(@PathVariable("marketplaceId") Long Id, @RequestBody Map<String, Object> campos) {
-			Optional<Estado> marketPlace = estadoRepository.findById(Id);
+		@PatchMapping("/{estadoId}") 
+		public ResponseEntity<?> atualizaParcial(@PathVariable("estadoId") Long Id, @RequestBody Map<String, Object> campos) {
+			Optional<Estado> estado = estadoRepository.findById(Id);
 		
-			if(marketPlace.isEmpty()) {
+			if(estado.isEmpty()) {
 				return ResponseEntity.notFound().build();
 			}
 			
-			merge(campos, marketPlace.get());		
-			return atualizar(Id,marketPlace.get());
+			merge(campos, estado.get());		
+			return atualizar(Id,estado.get());
 		}
 		
 		
@@ -126,7 +138,7 @@ public class EstadoControler {
 	
 	//Comandos DELET
 	@DeleteMapping("/{estadoId}") 
-	public ResponseEntity<Estado> remover(@PathVariable("estadoId") Long Id) {
+	public ResponseEntity<Estado> remover(@PathVariable("estadoId") Long Id) {// -> /estados/estadoId 
 		try {
 			
 			estadoServices.excluir(Id); 
