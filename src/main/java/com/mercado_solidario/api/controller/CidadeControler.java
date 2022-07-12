@@ -105,32 +105,32 @@ public class CidadeControler {
 	}
 	
 	//Comando PATCH
-		@PatchMapping("/{cidadeId}") 
-		public ResponseEntity<?> atualizaParcial(@PathVariable("cidadeId") Long Id, @RequestBody Map<String, Object> campos) {
-			Optional<Cidade> cidade = cidadeRepository.findById(Id);
-		
-			if(cidade.isEmpty()) {
-				return ResponseEntity.notFound().build();
-			}
-			
-			merge(campos, cidade.get());		
-		
-			return atualizar(Id,cidade.get());
+	@PatchMapping("/{cidadeId}") 
+	public ResponseEntity<?> atualizaParcial(@PathVariable("cidadeId") Long Id, @RequestBody Map<String, Object> campos) {
+		Optional<Cidade> cidade = cidadeRepository.findById(Id);
+	
+		if(cidade.isEmpty()) {
+			return ResponseEntity.notFound().build();
 		}
 		
+		merge(campos, cidade.get());		
+	
+		return atualizar(Id,cidade.get());
+	}
 		
-		private void merge(Map<String, Object> camposOrigem, Cidade cidadeDestino) {
-			ObjectMapper objectMapper = new ObjectMapper();
-			Cidade cidadeOrigem = objectMapper.convertValue(camposOrigem, Cidade.class);
+		
+	private void merge(Map<String, Object> camposOrigem, Cidade cidadeDestino) {
+		ObjectMapper objectMapper = new ObjectMapper();
+		Cidade cidadeOrigem = objectMapper.convertValue(camposOrigem, Cidade.class);
+		
+		camposOrigem.forEach((nomePropiedade, valorPropiedade) -> {
+			Field field = ReflectionUtils.findField(Cidade.class, nomePropiedade);
+			field.setAccessible(true); 
+			Object novoValor = ReflectionUtils.getField(field,cidadeOrigem);
 			
-			camposOrigem.forEach((nomePropiedade, valorPropiedade) -> {
-				Field field = ReflectionUtils.findField(Cidade.class, nomePropiedade);
-				field.setAccessible(true); 
-				Object novoValor = ReflectionUtils.getField(field,cidadeOrigem);
-				
-				ReflectionUtils.setField(field, cidadeDestino, novoValor);
-			});
-		}
+			ReflectionUtils.setField(field, cidadeDestino, novoValor);
+		});
+	}
 	
 	
 	//Comandos DELET
