@@ -9,6 +9,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,5 +35,10 @@ public class Grupo {
 	//		joinColumns = @JoinColumn(name = "nome_coluna")),
 	//		inverseJoinColumns = @JoinColumn(name = "nome_da_outa_coluna"))
 	private List<Permissao> permissao = new ArrayList<>();
+	
+	@JsonIgnore
+	@OneToMany(mappedBy = "grupo")
+	private List<Usuario> usuarios = new ArrayList<>();
+	
 	
 }

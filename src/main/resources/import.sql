@@ -28,3 +28,11 @@ insert into formas_de_pagamento (descricao)  values ("lorem ipsum")
 
 insert into fornecedor (nome, endereço_id) values ("Jorge",1)
 insert into fornecedor (nome, endereço_id) values ("Lory",2)
+
+insert into usuario (nome, email, senha, data_cadastro, endereço_id, grupo_id) values ("Leo","@Uno", "123", "2022-02-02", 1, 1)
+insert into usuario (nome, email, senha, data_cadastro, endereço_id, grupo_id) values ("Rorona","@Dos", "456", "2022-04-02", 2, 2)
+
+insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria) values ("Maçã", "Boa maçã", 10, true, "natural", "organico", "categoria 1")
+insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria) values ("laranja", "Boa laranja", 12, true, "natural", "organico", "categoria 2")
+insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria) values ("carne", "fresco", 14, false, "animal", "organico", "categoria 3")
+insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria) values ("Leite", "Leite de gado", 16, true, "natural", "organico", "categoria 4")

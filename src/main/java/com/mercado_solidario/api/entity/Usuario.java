@@ -1,7 +1,6 @@
 package com.mercado_solidario.api.entity;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -9,8 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToOne;
+import javax.persistence.ManyToOne;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,7 +16,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-public class Fornecedor {
+public class Usuario {
 
 	@EqualsAndHashCode.Include
 	@Id
@@ -28,15 +26,24 @@ public class Fornecedor {
 	@Column(nullable = false)
 	private String nome;
 	
-	@OneToOne
-	@JoinColumn
+	@Column(nullable = true)
+	private String email;
+	
+	@Column(nullable = false)
+	private String senha;
+	
+	@Column(nullable = false)
+	private Date dataCadastro;
+	
+	//@JsonIgnore
+	@ManyToOne
+	@JoinColumn(nullable = false)
 	private Endereço endereço;
 	
 	//@JsonIgnore
-	@ManyToMany
-  /*  @JoinTable(name = "fornecedor_produto",
-        joinColumns = { @JoinColumn(name = "fk_fornecedor") },
-        inverseJoinColumns = { @JoinColumn(name = "fk_produto") })*/
-    private List<Produto> produtos = new ArrayList<>();
-	
+	@ManyToOne
+	@JoinColumn(name = "grupo_id", nullable = false)
+	private Grupo grupo;
+
+
 }
