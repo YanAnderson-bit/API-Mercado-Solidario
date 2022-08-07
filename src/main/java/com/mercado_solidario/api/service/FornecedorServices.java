@@ -60,7 +60,10 @@ public class FornecedorServices {
 	
 	public void excluir(Long Id){ 
 		try {
+			Fornecedor fornecedorAntigo = fornecedorRepository.findById(Id).get();
 			fornecedorRepository.deleteById(Id);
+			List<Produto> produtos = fornecedorAntigo.getProdutos();
+			produtos.forEach(produto -> produto.removeFornecedor(fornecedorAntigo));
 		} catch (EmptyResultDataAccessException e) {
 			throw new EntidadeNaoEncontradaExeption(
 					String.format("Não existe cadastro da fornecedor de código %d", Id));

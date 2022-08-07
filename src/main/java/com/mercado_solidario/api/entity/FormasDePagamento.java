@@ -21,5 +21,21 @@ public class FormasDePagamento {
 	
 	@Column(nullable = false)
 	private String descricao;
+	/*
+	@JsonIgnore
+	@ManyToMany(mappedBy="formasDePagamentos")
+    private List<MarketPlace> marketPlaces = new ArrayList<>();
+
+	public void addMarketPlace(MarketPlace marketPlace) {
+		this.marketPlaces.add(marketPlace);
+		
+        //fornecedor.getProdutos().add(this);
+    }
+ 
+    public void removeMarketPlace(MarketPlace marketPlace) {
+    	this.marketPlaces.remove(marketPlace);
+  
+  //      fornecedor.getProdutos().remove(this);
+    }*/
 }
 

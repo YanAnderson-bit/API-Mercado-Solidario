@@ -1,5 +1,7 @@
 package com.mercado_solidario.api.entity;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -9,10 +11,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToOne;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,7 +20,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-public class Usuario {
+public class MarketPlace {
 
 	@EqualsAndHashCode.Include
 	@Id
@@ -31,27 +31,29 @@ public class Usuario {
 	private String nome;
 	
 	@Column(nullable = true)
-	private String email;
+	private String classificacao;
 	
 	@Column(nullable = false)
-	private String senha;
+	private BigDecimal taxaFrete;
+	
+	@Column(nullable = false)
+	private boolean ativo;
+	
+	@Column(nullable = false)
+	private boolean aberto;
 	
 	@Column(nullable = false)
 	private Date dataCadastro;
 	
-	//@JsonIgnore
-	@ManyToOne
-	@JoinColumn(nullable = false)
+	@Column(nullable = false)
+	private Date dataAtualizacao;
+	
+	@OneToOne
+	@JoinColumn
 	private Endereço endereço;
 	
 	//@JsonIgnore
-	@ManyToOne
-	@JoinColumn(name = "grupo_id", nullable = false)
-	private Grupo grupo;
-	
-	@JsonIgnore
-	@OneToMany(mappedBy="usuario")
-    private List<Pedido> pedidos;
-
-
+	@ManyToMany
+	//@JoinColumn(nullable = false)
+	private List<FormasDePagamento> formasDePagamento = new ArrayList<>();
 }

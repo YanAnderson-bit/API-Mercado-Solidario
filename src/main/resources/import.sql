@@ -36,3 +36,7 @@ insert into produto (nome, descricao, preco, disponivel, natureza, origem, categ
 insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria) values ("laranja", "Boa laranja", 12, true, "natural", "organico", "categoria 2")
 insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria) values ("carne", "fresco", 14, false, "animal", "organico", "categoria 3")
 insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria) values ("Leite", "Leite de gado", 16, true, "natural", "organico", "categoria 4")
+
+insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, endereço_id) values ("123", 10, 0.1, 20, "2022-02-02", "Criado", 1, 1)
+insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, endereço_id) values ("456", 20, 0.2, 40, "2022-04-04", "confirmado", 2, 1)
+insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, endereço_id) values ("789", 30, 0.3, 60, "2022-06-06", "cançelado", 2, 2)
