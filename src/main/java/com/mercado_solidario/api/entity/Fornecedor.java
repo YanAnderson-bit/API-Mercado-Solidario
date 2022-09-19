@@ -9,7 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
 import lombok.Data;
@@ -33,10 +33,6 @@ public class Fornecedor {
 	private Endereço endereço;
 	
 	//@JsonIgnore
-	@ManyToMany
-  /*  @JoinTable(name = "fornecedor_produto",
-        joinColumns = { @JoinColumn(name = "fk_fornecedor") },
-        inverseJoinColumns = { @JoinColumn(name = "fk_produto") })*/
+	@OneToMany(mappedBy="fornecedor")
     private List<Produto> produtos = new ArrayList<>();
-	
 }

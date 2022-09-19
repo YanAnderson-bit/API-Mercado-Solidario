@@ -45,13 +45,6 @@ public class FornecedorServices {
 							String.format("Não existe cadastro de profuyo de código %d", Id)));
 			produtos.add(produto);
 		}
-		
-		if(fornecedorRepository.findById(Id).isPresent()&&(!fornecedorRepository.findById(Id).get().getProdutos().equals(produtos))) {
-			Fornecedor fornecedorAntigo = fornecedorRepository.findById(Id).get();
-			produtos.forEach(produto -> produto.removeFornecedor(fornecedorAntigo));
-			produtos.forEach(produto -> produto.addFornecedor(fornecedor));
-		}
-		
 		fornecedor.setProdutos(produtos);//evitar duplicatas
 		fornecedor.setEndereço(endereço);
 		
@@ -63,7 +56,7 @@ public class FornecedorServices {
 			Fornecedor fornecedorAntigo = fornecedorRepository.findById(Id).get();
 			fornecedorRepository.deleteById(Id);
 			List<Produto> produtos = fornecedorAntigo.getProdutos();
-			produtos.forEach(produto -> produto.removeFornecedor(fornecedorAntigo));
+			produtos.forEach(produto -> produtoRepository.delete(produto));
 		} catch (EmptyResultDataAccessException e) {
 			throw new EntidadeNaoEncontradaExeption(
 					String.format("Não existe cadastro da fornecedor de código %d", Id));

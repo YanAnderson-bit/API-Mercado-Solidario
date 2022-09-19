@@ -140,6 +140,18 @@ public class MarketPlaceControler {
 	public List<MarketPlace> MarketPlacePorFormasDePagamentoDescricao(String descricao) { 
 		return marketplaceRepository.findAllByFormasDePagamentoDescricaoContains(descricao);
 	}
+	////////////////////
+		
+	//  -> /marketplace/por-cidade?cidade=cidade
+	@GetMapping("/por-cidade")
+	public List<MarketPlace> MarketPlacePorCidade(String cidade) { 
+		return marketplaceRepository.findAllByEndereçoCidadeNomeContains(cidade);
+	}
+	//  -> /marketplace/por-estado?estado=estado
+	@GetMapping("/por-estado")
+	public List<MarketPlace> MarketPlacePorEstado(String estado) { 
+		return marketplaceRepository.findAllByEndereçoCidadeEstadoNomeContains(estado);
+	}
 	
 	//Comando POST
 	@PostMapping 

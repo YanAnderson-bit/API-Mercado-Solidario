@@ -57,13 +57,25 @@ public class ProdutoControler {
 		return ResponseEntity.notFound().build();
 	}
 	
-    //  -> /produtos/por-nome?nome=nome_buscado
-	@GetMapping("/fornecedores/{produtoId}")
+    /*//  -> /produtos/por-nome?nome=nome_buscado
+	@GetMapping("/fornecedor/{produtoId}")
 	public ResponseEntity<List<Fornecedor>> FornecedoresPorProduto(@PathVariable("produtoId") Long Id) { 
 		Optional<Produto> produto = produtoRepository.findById(Id);
 		
 		if(produto.isPresent()) {
-			return ResponseEntity.ok(produto.get().getFornecedores());
+			//return ResponseEntity.ok(produto.get().getFornecedores()); <-------------Concertar
+		}
+		
+		return ResponseEntity.notFound().build();
+	}*/
+	
+//  -> /produtos/por-nome?nome=nome_buscado
+	@GetMapping("/fornecedor/{produtoId}")
+	public ResponseEntity<Fornecedor> FornecedorPorProduto(@PathVariable("produtoId") Long Id) { 
+		Optional<Produto> produto = produtoRepository.findById(Id);
+		
+		if(produto.isPresent()) {
+			return ResponseEntity.ok(produto.get().getFornecedor());
 		}
 		
 		return ResponseEntity.notFound().build();

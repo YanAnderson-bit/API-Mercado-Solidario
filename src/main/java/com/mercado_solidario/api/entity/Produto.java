@@ -1,15 +1,13 @@
 package com.mercado_solidario.api.entity;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -47,18 +45,23 @@ public class Produto {
 	@Column(nullable = false)
 	private String categoria;
 	
+	@Column(nullable = true)
+	private String manuseio;
+	
+	@Column(nullable = true)
+	private String unidade;
+	
+	@Column(nullable = true)
+	private Integer quantidade;
+	
+	@Column(nullable = true)
+	private String frequenciaDisponibilidade;
+	
+	@Column(nullable = true)
+	//Guarda a string com o valor Base64 da imagem, conversão deve ser tratada pelas apllicações
+	private String fotoData;
+	
 	@JsonIgnore
-	@ManyToMany(mappedBy="produtos")
-    private List<Fornecedor> fornecedores = new ArrayList<>();
-	
-	public void addFornecedor(Fornecedor fornecedor) {
-        this.fornecedores.add(fornecedor);
-        fornecedor.getProdutos().add(this);
-    }
- 
-    public void removeFornecedor(Fornecedor fornecedor) {
-        this.fornecedores.remove(fornecedor);
-        fornecedor.getProdutos().remove(this);
-    }
-	
+	@ManyToOne
+	private Fornecedor fornecedor;
 }

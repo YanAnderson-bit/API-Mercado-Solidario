@@ -41,5 +41,9 @@ public interface MarketPlaceRepository extends JpaRepository<MarketPlace, Long>{
 	List<MarketPlace> findAllByFormasDePagamentoId(Long formasDePagamentoId);
 	
 	List<MarketPlace> findAllByFormasDePagamentoDescricaoContains(String descricao);
+	
+	List<MarketPlace> findAllByEndereçoCidadeNomeContains(String cidade);
+	
+	List<MarketPlace> findAllByEndereçoCidadeEstadoNomeContains(String estado);
 
 }
