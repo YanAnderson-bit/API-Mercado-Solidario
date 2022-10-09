@@ -8,12 +8,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
-import com.mercado_solidario.api.entity.Endereço;
 import com.mercado_solidario.api.entity.Fornecedor;
 import com.mercado_solidario.api.entity.Produto;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
-import com.mercado_solidario.api.repository.EndereçoRepository;
 import com.mercado_solidario.api.repository.FornecedorRepository;
 import com.mercado_solidario.api.repository.ProdutoRepository;
 
@@ -23,18 +21,18 @@ public class FornecedorServices {
 	@Autowired 
 	private FornecedorRepository fornecedorRepository;
 	
-	@Autowired 
-	private EndereçoRepository endereçoRepository;
+//	@Autowired 
+//	private EndereçoRepository endereçoRepository;
 	
 	@Autowired 
 	private ProdutoRepository produtoRepository;
 	
 	public Fornecedor salvar(Fornecedor fornecedor) { 
-		Long Id = fornecedor.getEndereço().getId();	
+	/*	Long Id = fornecedor.getEndereço().getId();	
 		Endereço endereço = endereçoRepository.findById(Id)
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de endereço de código %d", Id)));
-		
+		*/
 		List<Long> idsPermissao = new ArrayList<>();
 		fornecedor.getProdutos().forEach(t -> idsPermissao.add(t.getId()));
 		
@@ -42,11 +40,11 @@ public class FornecedorServices {
 		for(Long id: idsPermissao) {
 			Produto produto = produtoRepository.findById(id)
 					.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
-							String.format("Não existe cadastro de profuyo de código %d", Id)));
+							String.format("Não existe cadastro de profuyo de código %d", id)));
 			produtos.add(produto);
 		}
 		fornecedor.setProdutos(produtos);//evitar duplicatas
-		fornecedor.setEndereço(endereço);
+		//fornecedor.setEndereço(endereço);
 		
 		return fornecedorRepository.save(fornecedor);
 	}

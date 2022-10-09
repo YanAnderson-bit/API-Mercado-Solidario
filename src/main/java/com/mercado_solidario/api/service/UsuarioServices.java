@@ -5,12 +5,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
-import com.mercado_solidario.api.entity.Endereço;
 import com.mercado_solidario.api.entity.Grupo;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
-import com.mercado_solidario.api.repository.EndereçoRepository;
 import com.mercado_solidario.api.repository.GrupoRepository;
 import com.mercado_solidario.api.repository.UsuarioRepository;
 
@@ -23,8 +21,8 @@ public class UsuarioServices {
 	@Autowired 
 	private GrupoRepository grupoRepository;
 	
-	@Autowired 
-	private EndereçoRepository endereçoRepository;
+//	@Autowired 
+//	private EndereçoRepository endereçoRepository;
 	
 	public Usuario salvar(Usuario usuario) {
 		Long idGrupo = usuario.getGrupo().getId();	
@@ -32,12 +30,12 @@ public class UsuarioServices {
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de grupo de código %d", idGrupo)));
 		
-		Long idEndereço = usuario.getEndereço().getId();	
+	/*	Long idEndereço = usuario.getEndereço().getId();	
 		Endereço endereço = endereçoRepository.findById(idEndereço)
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de endereço de código %d", idEndereço)));
 		
-		usuario.setEndereço(endereço);
+		usuario.setEndereço(endereço);*/
 		usuario.setGrupo(grupo);
 		
 		return usuarioRepository.save(usuario);

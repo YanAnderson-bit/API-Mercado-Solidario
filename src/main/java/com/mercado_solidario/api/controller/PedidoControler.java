@@ -177,7 +177,7 @@ public class PedidoControler {
 			if(pedidoAtual.isPresent()) {
 				if(pedidoAtual.get().getStatus()=="CREATED") pedido.criacao(pedidoAtual.get());
 				
-				BeanUtils.copyProperties(pedido, pedidoAtual.get(), "id");
+				BeanUtils.copyProperties(pedido, pedidoAtual.get(), "id", "endereço");
 				Pedido pedidoSalvo = pedidoServices.salvar(pedidoAtual.get());
 				
 				return ResponseEntity.ok(pedidoSalvo);

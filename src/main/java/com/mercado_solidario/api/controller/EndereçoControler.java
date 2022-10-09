@@ -1,38 +1,9 @@
 package com.mercado_solidario.api.controller;
 
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mercado_solidario.api.entity.Cidade;
-import com.mercado_solidario.api.entity.Endereço;
-import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
-import com.mercado_solidario.api.repository.EndereçoRepository;
-import com.mercado_solidario.api.service.EndereçoServices;
-
-@RestController 
-@RequestMapping(value = "/endereços")
+//@RestController 
+//@RequestMapping(value = "/endereços")
 public class EndereçoControler {
-
+/*
 	@Autowired
 	private EndereçoRepository endereçoRepository;
 	
@@ -107,7 +78,7 @@ public class EndereçoControler {
 		        "id": id,
 		    }
 		}
-		*/
+		*//*
 		return endereçoServices.salvar(endereço);
 	}
 
@@ -125,7 +96,7 @@ public class EndereçoControler {
 		        "id": id,
 		    }
 		}
-		*/
+		*//*
 		try {
 			Optional<Endereço> endereçoAtual = endereçoRepository.findById(Id);
 		
@@ -184,5 +155,5 @@ public class EndereçoControler {
 		}
 			
 	}
-	
+	*/
 }

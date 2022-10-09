@@ -8,14 +8,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
-import com.mercado_solidario.api.entity.Endereço;
 import com.mercado_solidario.api.entity.Pedido;
 import com.mercado_solidario.api.entity.PedidoProduto;
 import com.mercado_solidario.api.entity.Produto;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
-import com.mercado_solidario.api.repository.EndereçoRepository;
 import com.mercado_solidario.api.repository.PedidoRepository;
 import com.mercado_solidario.api.repository.ProdutoRepository;
 import com.mercado_solidario.api.repository.UsuarioRepository;
@@ -28,8 +26,8 @@ public class PedidoServices {
 	@Autowired 
 	private UsuarioRepository usuarioRepository;
 	
-	@Autowired 
-	private EndereçoRepository endereçoRepository;
+//	@Autowired 
+//	private EndereçoRepository endereçoRepository;
 	
 	@Autowired 
 	private ProdutoRepository produtoRepository;
@@ -40,11 +38,11 @@ public class PedidoServices {
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de usuario de código %d", idUsuario)));
 		
-		Long idEndereço = pedido.getEndereço().getId();	
+		/*Long idEndereço = pedido.getEndereço().getId();	
 		Endereço endereço = endereçoRepository.findById(idEndereço)
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de endereço de código %d", idEndereço)));
-		
+		*/
 		List<Long> IdProdutos = new ArrayList<>();
 		List<PedidoProduto> pedidosProdutos = new ArrayList<>();
 		pedido.getPedidoProdutos().forEach(produto ->{
@@ -76,7 +74,7 @@ public class PedidoServices {
 			pedido.criacao(null);
 		}
 		
-		pedido.setEndereço(endereço);
+		//pedido.setEndereço(endereço);
 		pedido.setUsuario(usuario);
 		
 		return pedidoRepository.save(pedido);

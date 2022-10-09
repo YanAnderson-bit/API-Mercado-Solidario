@@ -91,7 +91,7 @@ public class FornecedorControler {
 			Optional<Fornecedor> fornecedorAtual = fornecedorRepository.findById(Id);
 	
 			if(fornecedorAtual.isPresent()) {
-				BeanUtils.copyProperties(fornecedor, fornecedorAtual.get(), "id");
+				BeanUtils.copyProperties(fornecedor, fornecedorAtual.get(), "id", "endereço");
 				Fornecedor fornecedorSalvo = fornecedorServices.salvar(fornecedorAtual.get());
 				
 				return ResponseEntity.ok(fornecedorSalvo);

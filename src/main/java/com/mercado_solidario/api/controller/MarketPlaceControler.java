@@ -198,7 +198,7 @@ public class MarketPlaceControler {
 		
 			if(marketplaceAtual.isPresent()) {
 				marketplace.setDataCadastro(marketplaceAtual.get().getDataCadastro());
-				BeanUtils.copyProperties(marketplace, marketplaceAtual.get(), "id");
+				BeanUtils.copyProperties(marketplace, marketplaceAtual.get(), "id", "endereço", "dataCadastro");
 				MarketPlace marketplaceSalvo = marketplaceServices.salvar(marketplaceAtual.get());
 					
 				return ResponseEntity.ok(marketplaceSalvo);

@@ -1,20 +1,8 @@
 package com.mercado_solidario.api.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.stereotype.Service;
-
-import com.mercado_solidario.api.entity.Cidade;
-import com.mercado_solidario.api.entity.Endereço;
-import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
-import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
-import com.mercado_solidario.api.repository.CidadeRepository;
-import com.mercado_solidario.api.repository.EndereçoRepository;
-
-@Service
+//@Service
 public class EndereçoServices {
-
+/*
 	@Autowired 
 	private EndereçoRepository endereçoRepository;
 	
@@ -43,5 +31,5 @@ public class EndereçoServices {
 					String.format("Endereço de código %d não pode ser removida por estar em uso", Id));
 		}
 	}
-
+*/
 }

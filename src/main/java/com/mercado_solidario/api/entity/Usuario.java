@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -39,9 +40,10 @@ public class Usuario {
 	@Column(nullable = false)
 	private Date dataCadastro;
 	
-	//@JsonIgnore
-	@ManyToOne
-	@JoinColumn(nullable = false)
+	@JsonIgnore
+	//@ManyToOne
+	//@JoinColumn(nullable = false)
+	@Embedded
 	private Endereço endereço;
 	
 	//@JsonIgnore

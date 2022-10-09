@@ -1,21 +1,18 @@
 package com.mercado_solidario.api.entity;
 
 import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Entity
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+//@Entity
+@Embeddable
 public class Endereço {
-
+/*
 	@EqualsAndHashCode.Include
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +35,25 @@ public class Endereço {
 	
 	@ManyToOne
 	@JoinColumn(nullable = false)
+	private Cidade cidade;
+*/
+	@Column(nullable = false, name = "endereco_cep")
+	private String cep;
+	
+	@Column(nullable = true, name = "endereco_logadouro")
+	private String logadouro;
+	
+	@Column(nullable = false, name = "endereco_numero")
+	private Integer numero;
+	
+	@Column(nullable = false, name = "endereco_complemento")
+	private String complementoo;
+	
+	@Column(nullable = false, name = "endereco_bairro")
+	private String bairro;
+	
+	@ManyToOne
+	@JoinColumn(nullable = false, name = "endereco_cidade")
 	private Cidade cidade;
 
 }

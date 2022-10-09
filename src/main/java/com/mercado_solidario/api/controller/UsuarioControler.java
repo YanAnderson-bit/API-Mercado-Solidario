@@ -111,7 +111,7 @@ public class UsuarioControler {
 			usuario.setDataCadastro(cadastro);
 	
 			if(usuarioAtual.isPresent()) {
-				BeanUtils.copyProperties(usuario, usuarioAtual.get(), "id");
+				BeanUtils.copyProperties(usuario, usuarioAtual.get(), "id", "endereço");
 				Usuario usuarioSalvo = usuarioServices.salvar(usuarioAtual.get());
 				
 				

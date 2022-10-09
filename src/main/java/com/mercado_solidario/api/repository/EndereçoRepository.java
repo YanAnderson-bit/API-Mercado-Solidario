@@ -1,15 +1,8 @@
 package com.mercado_solidario.api.repository;
 
-import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import com.mercado_solidario.api.entity.Endereço;
-
-@Repository
-public interface EndereçoRepository extends JpaRepository<Endereço, Long>{
-	
+//@Repository
+public interface EndereçoRepository{
+	/*
 	List<Endereço> findAllByCepContains(String cep);
 	
 	List<Endereço> findAllByNumero(Integer numero);
@@ -21,5 +14,5 @@ public interface EndereçoRepository extends JpaRepository<Endereço, Long>{
 	List<Endereço> findAllByCidadeNomeContains(String nome);
 	
 	List<Endereço> findAllByCidadeEstadoNomeContains(String nome);
-
+*/
 }
