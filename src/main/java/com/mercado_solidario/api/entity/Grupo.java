@@ -36,7 +36,7 @@ public class Grupo {
 	//		inverseJoinColumns = @JoinColumn(name = "nome_da_outa_coluna"))
 	private List<Permissao> permissao = new ArrayList<>();
 	
-	@JsonIgnore
+	//@JsonIgnore
 	@OneToMany(mappedBy = "grupo")
 	private List<Usuario> usuarios = new ArrayList<>();
 	

@@ -62,6 +62,6 @@ public class Produto {
 	private String fotoData;
 	
 	@JsonIgnore
-	@ManyToOne
+	@ManyToOne//(fetch = FetchType.LAZY)
 	private Fornecedor fornecedor;
 }

@@ -9,6 +9,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -38,4 +39,8 @@ public class Fornecedor {
 	//@JsonIgnore
 	@OneToMany(mappedBy="fornecedor")
     private List<Produto> produtos = new ArrayList<>();
+	
+	@JsonIgnore
+	@ManyToOne//(fetch = FetchType.LAZY)
+	private MarketPlace marketPlace;
 }

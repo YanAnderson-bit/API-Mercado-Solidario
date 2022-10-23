@@ -12,6 +12,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -61,6 +62,14 @@ public class MarketPlace {
 	@JsonIgnore
 	@Embedded
 	private Endereço endereço;
+	
+	//@JsonIgnore
+	@OneToMany(mappedBy="marketPlace")
+    private List<Fornecedor> fornecedors = new ArrayList<>();
+	
+	//@JsonIgnore
+	@OneToMany(mappedBy="marketPlace")
+	private List<Pedido> pedidos = new ArrayList<>();
 	
 	//@JsonIgnore
 	@ManyToMany

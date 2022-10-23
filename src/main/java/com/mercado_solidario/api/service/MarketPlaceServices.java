@@ -11,11 +11,15 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.mercado_solidario.api.entity.FormasDePagamento;
+import com.mercado_solidario.api.entity.Fornecedor;
 import com.mercado_solidario.api.entity.MarketPlace;
+import com.mercado_solidario.api.entity.Pedido;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.FormasDePagamentoRepository;
+import com.mercado_solidario.api.repository.FornecedorRepository;
 import com.mercado_solidario.api.repository.MarketPlaceRepository;
+import com.mercado_solidario.api.repository.PedidoRepository;
 
 @Service
 public class MarketPlaceServices {
@@ -25,6 +29,12 @@ public class MarketPlaceServices {
 	
 	@Autowired 
 	private FormasDePagamentoRepository formasDePagamentoRepository;
+	
+	@Autowired 
+	private FornecedorRepository fornecedorRepository;
+	
+	@Autowired 
+	private PedidoRepository pedidoRepository;
 	
 //	@Autowired 
 //	private EndereçoRepository endereçoRepository;
@@ -55,14 +65,48 @@ public class MarketPlaceServices {
 			formasDePagamentos.add(formasDePagamento);
 		}
 		
+		List<Long> idsFornecedores = new ArrayList<>();
+		marketplace.getFormasDePagamento().forEach(f -> idsFornecedores.add(f.getId()));
+		
+		List<Fornecedor> fornecedores = new ArrayList<>();
+		for(Long id: idsFornecedores) {
+			Fornecedor fornecedor = fornecedorRepository.findById(id)
+					.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
+							String.format("Não existe cadastro de fornecedor de código %d", id)));
+			fornecedores.add(fornecedor);
+		}
+		
+		List<Long> idsPedidos = new ArrayList<>();
+		marketplace.getPedidos().forEach(f -> idsPedidos.add(f.getId()));
+		
+		List<Pedido> pedidos = new ArrayList<>();
+		for(Long id: idsPedidos) {
+			Pedido pedido = pedidoRepository.findById(id)
+					.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
+							String.format("Não existe cadastro de pedido de código %d", id)));
+			pedidos.add(pedido);
+		}
+		
+		marketplace.setFornecedors(fornecedores);
+		
 		marketplace.setFormasDePagamento(formasDePagamentos);
+		
+		marketplace.setPedidos(pedidos);
 
 		return marketplaceRepository.save(marketplace);
 	}
 	
 	public void excluir(Long Id){ 
 		try {
+			MarketPlace marketPlaceAntigo = marketplaceRepository.findById(Id).get();
 			marketplaceRepository.deleteById(Id);
+			
+			List<Fornecedor> fornecedores = marketPlaceAntigo.getFornecedors();
+			fornecedores.forEach(fornecedor -> fornecedorRepository.delete(fornecedor));
+			
+			List<Pedido> pedidos = marketPlaceAntigo.getPedidos();
+			pedidos.forEach(pedido -> pedidoRepository.delete(pedido));
+			
 		} catch (EmptyResultDataAccessException e) {
 			throw new EntidadeNaoEncontradaExeption(
 					String.format("Não existe cadastro da marketplace de código %d", Id));

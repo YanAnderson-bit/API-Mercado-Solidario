@@ -8,12 +8,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
+import com.mercado_solidario.api.entity.MarketPlace;
 import com.mercado_solidario.api.entity.Pedido;
 import com.mercado_solidario.api.entity.PedidoProduto;
 import com.mercado_solidario.api.entity.Produto;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
+import com.mercado_solidario.api.repository.MarketPlaceRepository;
 import com.mercado_solidario.api.repository.PedidoRepository;
 import com.mercado_solidario.api.repository.ProdutoRepository;
 import com.mercado_solidario.api.repository.UsuarioRepository;
@@ -32,11 +34,19 @@ public class PedidoServices {
 	@Autowired 
 	private ProdutoRepository produtoRepository;
 	
+	@Autowired 
+	private MarketPlaceRepository marketplaceRepository;
+	
 	public Pedido salvar(Pedido pedido) {
 		Long idUsuario = pedido.getUsuario().getId();
 		Usuario usuario = usuarioRepository.findById(idUsuario)
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de usuario de código %d", idUsuario)));
+		
+		Long Id = pedido.getMarketPlace().getId();
+		MarketPlace marketPlace = marketplaceRepository.findById(Id)
+				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
+				String.format("Não existe cadastro de feira de código %d", Id)));;
 		
 		/*Long idEndereço = pedido.getEndereço().getId();	
 		Endereço endereço = endereçoRepository.findById(idEndereço)
@@ -76,6 +86,7 @@ public class PedidoServices {
 		
 		//pedido.setEndereço(endereço);
 		pedido.setUsuario(usuario);
+		pedido.setMarketPlace(marketPlace);
 		
 		return pedidoRepository.save(pedido);
 	}

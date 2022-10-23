@@ -69,6 +69,10 @@ public class Pedido {
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 	
+	@JsonIgnore
+	@ManyToOne//(fetch = FetchType.LAZY)
+	private MarketPlace marketPlace;
+	
 	//@ManyToOne
     //@JoinColumn(name = "endereço_id")
 	@JsonIgnore

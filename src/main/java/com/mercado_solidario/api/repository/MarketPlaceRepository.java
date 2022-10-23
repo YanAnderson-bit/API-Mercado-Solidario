@@ -45,5 +45,4 @@ public interface MarketPlaceRepository extends JpaRepository<MarketPlace, Long>{
 	List<MarketPlace> findAllByEndereçoCidadeNomeContains(String cidade);
 	
 	List<MarketPlace> findAllByEndereçoCidadeEstadoNomeContains(String estado);
-
 }

@@ -23,8 +23,10 @@ insert into formas_de_pagamento (descricao)  values ("pagamento formato 1")
 insert into formas_de_pagamento (descricao)  values ("pasdasdada asasjdh")
 insert into formas_de_pagamento (descricao)  values ("lorem ipsum")
 
-insert into fornecedor (nome, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values  ("Jorge", '52300-000', null,12,'casa','centro', 1)
-insert into fornecedor (nome, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("Lory",'62100-000', null,22,'casa','centro', 2)
+insert into  market_place(nome,classificacao, taxa_frete, ativo, aberto, data_cadastro, data_atualizacao, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values  ("Feira tal 1","Organicos", 0.1, true, false,"2022-02-02","2022-02-02", '52300-000', null,156,'Edificio','centro', 1)
+
+insert into fornecedor (nome, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, market_place_id) values  ("Jorge", '52300-000', null,12,'casa','centro', 1, 1)
+insert into fornecedor (nome, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, market_place_id) values ("Lory",'62100-000', null,22,'casa','centro', 2, 1)
 
 insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, grupo_id) values ("Leo","@Uno", "123", "2022-02-02",  '52300-000', null,12,'casa','centro', 1, 1)
 insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, grupo_id) values ("Rorona","@Dos", "456", "2022-04-02", '62100-000', null,22,'casa','centro', 2, 2)
@@ -34,6 +36,6 @@ insert into produto (nome, descricao, preco, disponivel, natureza, origem, categ
 insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria, fornecedor_id) values ("carne", "fresco", 14, false, "animal", "organico", "categoria 3", 2)
 insert into produto (nome, descricao, preco, disponivel, natureza, origem, categoria, fornecedor_id) values ("Leite", "Leite de gado", 16, true, "natural", "organico", "categoria 4", 1)
 
-insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id,endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("123", 10, 0.1, 20, "2022-02-02", "Criado", 1, '52300-000', null,12,'casa','centro', 1)
-insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("456", 20, 0.2, 40, "2022-04-04", "confirmado", 2, '52300-000', null,12,'casa','centro', 1)
-insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("789", 30, 0.3, 60, "2022-06-06", "cançelado", 2,'62100-000', null,22,'casa','centro', 2)
+insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, market_place_id, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("123", 10, 0.1, 20, "2022-02-02", "Criado", 1, 1, '52300-000', null,12,'casa','centro', 1)
+insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, market_place_id, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("456", 20, 0.2, 40, "2022-04-04", "confirmado", 2, 1, '52300-000', null,12,'casa','centro', 1)
+insert into pedido (codigo, sub_total, taxa_frete, valor_total, data_criacao, status, usuario_id, market_place_id, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("789", 30, 0.3, 60, "2022-06-06", "cançelado", 2, 1, '62100-000', null,22,'casa','centro', 2)

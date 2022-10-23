@@ -2,6 +2,7 @@ package com.mercado_solidario.api.controller;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mercado_solidario.api.entity.Fornecedor;
 import com.mercado_solidario.api.entity.MarketPlace;
+import com.mercado_solidario.api.entity.Pedido;
+import com.mercado_solidario.api.entity.Produto;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.MarketPlaceRepository;
 import com.mercado_solidario.api.service.MarketPlaceServices;
@@ -55,6 +59,44 @@ public class MarketPlaceControler {
 		}
 		
 		return ResponseEntity.notFound().build();
+	}
+	
+	// -> /marketplace/marketplaceId/fornecedores
+	@GetMapping("/{marketplaceId}/fornecedores")
+	public List<Fornecedor> FornecedoresPorMarketPlaces(@PathVariable("marketplaceId") Long Id) { 
+		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+		
+		if(marketplace.isPresent()) {
+			List<Fornecedor> fornecedors = marketplace.get().getFornecedors();
+			return fornecedors;
+		}	
+		return null;
+	}
+	
+	// -> /marketplace/marketplaceId/produtos
+	@GetMapping("/{marketplaceId}/produtos")
+	public List<List<Produto>> ProdutosPorMarketPlaces(@PathVariable("marketplaceId") Long Id) { 
+		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+		
+		if(marketplace.isPresent()) {
+			List<Fornecedor> fornecedors = marketplace.get().getFornecedors();
+			List<List<Produto>> listProdutos = new ArrayList<>();
+			fornecedors.forEach(fornecedor -> listProdutos.add(fornecedor.getProdutos()));
+			return listProdutos;
+		}	
+		return null;
+	}
+	
+	// -> /marketplace/marketplaceId/pedidos
+	@GetMapping("/{marketplaceId}/pedidos")
+	public List<Pedido> PedidosPorMarketPlaces(@PathVariable("marketplaceId") Long Id) { 
+		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+		
+		if(marketplace.isPresent()) {
+			List<Pedido> pedidos = marketplace.get().getPedidos();
+			return pedidos;
+		}	
+		return null;
 	}
 	
 	//  -> /marketplace/por-nome?nome=nome_buscado
