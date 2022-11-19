@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercado_solidario.api.entity.Pedido;
 import com.mercado_solidario.api.entity.PedidoProduto;
+import com.mercado_solidario.api.enumarations.StatusPedido;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.PedidoProdutoRepository;
 import com.mercado_solidario.api.repository.PedidoRepository;
@@ -175,7 +176,7 @@ public class PedidoControler {
 			Optional<Pedido> pedidoAtual = pedidoRepository.findById(Id);
 	
 			if(pedidoAtual.isPresent()) {
-				if(pedidoAtual.get().getStatus()=="CREATED") pedido.criacao(pedidoAtual.get());
+				if(pedidoAtual.get().getStatus()==StatusPedido.CRIADO) pedido.criacao(pedidoAtual.get());
 				
 				BeanUtils.copyProperties(pedido, pedidoAtual.get(), "id", "endereço");
 				Pedido pedidoSalvo = pedidoServices.salvar(pedidoAtual.get());
@@ -239,6 +240,19 @@ public class PedidoControler {
 		}
 		
 		pedido.get().cancelar();
+		
+		return atualizar(Id,pedido.get());
+	}
+	
+	@PatchMapping("/entregue/{pedidoId}")
+	public ResponseEntity<?> entregue(@PathVariable("pedidoId") Long Id) {
+		Optional<Pedido> pedido = pedidoRepository.findById(Id);
+		
+		if(pedido.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+		
+		pedido.get().entregue();
 		
 		return atualizar(Id,pedido.get());
 	}

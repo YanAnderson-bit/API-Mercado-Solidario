@@ -21,6 +21,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.mercado_solidario.api.enumarations.StatusPedido;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -62,7 +63,7 @@ public class Pedido {
 	private Date dataEntrega;
 	
 	@Column(nullable = false)
-	private String status;//Status Pedido
+	private StatusPedido status;//Status Pedido
 	
 	@JsonIgnoreProperties(value = {"grupo", "endereço"})
 	@ManyToOne
@@ -108,7 +109,7 @@ public class Pedido {
 	}
 	
 	public void criacao(Pedido pedido) {//o que estiver confirmado não pode ser alterado
-			this.setStatus("CREATED");
+			this.setStatus(StatusPedido.CRIADO);
 		if(pedido==null) {
 			this.setDataCriacao(Date.from(Instant.now()));
 		}else{
@@ -118,12 +119,17 @@ public class Pedido {
 	
 	public void confirmar() {
 		this.setDataConfirmação(Date.from(Instant.now()));
-		this.setStatus("CONFIRMED");
+		this.setStatus(StatusPedido.CONFIRMADO);
 	}
 	
 	public void cancelar() {
 		this.setDataCançelamento(Date.from(Instant.now()));
-		this.setStatus("CANCELED");
+		this.setStatus(StatusPedido.CANCELADO);
+	}
+	
+	public void entregue() {
+		this.setDataCançelamento(Date.from(Instant.now()));
+		this.setStatus(StatusPedido.ENTREGUE);
 	}
 	
 }

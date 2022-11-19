@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.validation.constraints.Size;
 
 import lombok.Data;
 
@@ -38,6 +39,7 @@ public class Endereço {
 	private Cidade cidade;
 */
 	@Column(nullable = false, name = "endereco_cep")
+	@Size(min=8)
 	private String cep;
 	
 	@Column(nullable = true, name = "endereco_logadouro")

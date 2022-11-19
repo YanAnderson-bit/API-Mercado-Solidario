@@ -11,8 +11,6 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

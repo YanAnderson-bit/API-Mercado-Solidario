@@ -9,6 +9,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.validation.constraints.Min;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -26,6 +27,7 @@ public class PedidoProduto {
 	private Long id;
 	
 	@Column(nullable = false)
+	@Min(1)
 	private int quantidade;
 	
 	@Column(nullable = false)

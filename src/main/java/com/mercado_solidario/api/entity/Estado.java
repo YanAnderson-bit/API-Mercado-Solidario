@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.validation.constraints.Size;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,5 +24,6 @@ public class Estado {
 	private String nome;
 	
 	@Column(nullable = false)
+	@Size(min=2)
 	private String sigla;
 }
