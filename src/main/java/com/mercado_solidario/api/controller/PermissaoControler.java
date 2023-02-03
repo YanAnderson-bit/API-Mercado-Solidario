@@ -44,6 +44,7 @@ public class PermissaoControler {
 		return permissaoRepository.findAll();
 	}
 	
+	//@PreAuthorize("hasAuthority('POST_PATCH_ALLOWED')")
 	@GetMapping("/{permissaoId}") // -> /permissoes/permissaoId 
 	public ResponseEntity<Permissao> buscar(@PathVariable("permissaoId") Long Id) {
 		Optional<Permissao> permissao = permissaoRepository.findById(Id);
@@ -69,6 +70,7 @@ public class PermissaoControler {
 	}
 	
 	//Comando POST
+	//@PostAuthorize()
 	@PostMapping 
 	@ResponseStatus(HttpStatus.CREATED)
 	public Permissao adicionar(@RequestBody Permissao permissao) { 

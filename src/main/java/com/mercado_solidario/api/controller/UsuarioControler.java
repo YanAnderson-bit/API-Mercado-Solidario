@@ -1,7 +1,6 @@
 package com.mercado_solidario.api.controller;
 
 import java.lang.reflect.Field;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +38,9 @@ public class UsuarioControler {
 	
 	@Autowired 
 	private UsuarioServices usuarioServices;
+	
+	//@Autowired
+	//private PasswordEncoder passwordEncoder;
 	
 	@GetMapping
 	public List<Usuario> listar() {
@@ -97,8 +99,10 @@ public class UsuarioControler {
 		    }
 		}
 		*/
-		usuario.setDataCadastro(Date.from(Instant.now()));
-		return usuarioServices.salvar(usuario);
+		return usuario;
+		//usuario.setDataCadastro(Date.from(Instant.now()));
+		//usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+	//	return usuarioServices.salvar(usuario);
 	}
 	
 	//Comandos PUT

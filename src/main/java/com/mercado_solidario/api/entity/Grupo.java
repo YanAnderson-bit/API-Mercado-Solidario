@@ -1,17 +1,16 @@
 package com.mercado_solidario.api.entity;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,14 +30,26 @@ public class Grupo {
 	
 	//@JsonIgnore
 	@ManyToMany
+	//private List<Permissao> permissao = new ArrayList<>();
 	//@JOinTable(name = "Nome_da_Tabela_riada", 
 	//		joinColumns = @JoinColumn(name = "nome_coluna")),
 	//		inverseJoinColumns = @JoinColumn(name = "nome_da_outa_coluna"))
-	private List<Permissao> permissao = new ArrayList<>();
-	
+	@JoinTable(name = "grupo_permissao", joinColumns =  @JoinColumn(name = "grupo_id"),
+									inverseJoinColumns = @JoinColumn(name = "permissao_id"))
+	private Set<Permissao> permissao = new HashSet<>();
+	//private Set<Permissao> permissoes = new HashSet<>();
+
 	//@JsonIgnore
-	@OneToMany(mappedBy = "grupo")
-	private List<Usuario> usuarios = new ArrayList<>();
+	//@OneToMany(mappedBy = "grupo")
+	//private List<Usuario> usuarios = new ArrayList<>();
+	
+	public void adicionarPermissao(Permissao permissao) {
+		this.permissao.add(permissao);
+	}
+	
+	public void removePermissao(Permissao permissao) {
+		this.permissao.remove(permissao);
+	}
 	
 	
 }

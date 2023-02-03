@@ -2,6 +2,7 @@ package com.mercado_solidario.api.repository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -20,5 +21,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
 	List<Usuario> findAllByEndereçoCidadeNomeContains(String cidade);
 	
 	List<Usuario> findAllByEndereçoCidadeEstadoNomeContains(String estado);
+	
+	Optional<Usuario> findByEmail(String email);
 
 }

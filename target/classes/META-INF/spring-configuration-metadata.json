@@ -1,0 +1,27 @@
+{
+  "groups": [
+    {
+      "name": "algafood.jwt.keystore",
+      "type": "com.mercado_solidario.api.core.JwtKeyStoreProperties",
+      "sourceType": "com.mercado_solidario.api.core.JwtKeyStoreProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "algafood.jwt.keystore.jks-location",
+      "type": "org.springframework.core.io.Resource",
+      "sourceType": "com.mercado_solidario.api.core.JwtKeyStoreProperties"
+    },
+    {
+      "name": "algafood.jwt.keystore.keypair-alias",
+      "type": "java.lang.String",
+      "sourceType": "com.mercado_solidario.api.core.JwtKeyStoreProperties"
+    },
+    {
+      "name": "algafood.jwt.keystore.password",
+      "type": "java.lang.String",
+      "sourceType": "com.mercado_solidario.api.core.JwtKeyStoreProperties"
+    }
+  ],
+  "hints": []
+}

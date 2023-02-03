@@ -49,7 +49,7 @@ public class MarketPlaceControler {
 	public List<MarketPlace> listar() {
 		return marketplaceRepository.findAll();
 	}
-	
+
 	@GetMapping("/{marketplaceId}") // -> /marketplace/marketplaceId 
 	public ResponseEntity<MarketPlace> buscar(@PathVariable("marketplaceId") Long Id) {
 		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
@@ -72,21 +72,20 @@ public class MarketPlaceControler {
 		}	
 		return null;
 	}
-	
 	// -> /marketplace/marketplaceId/produtos
 	@GetMapping("/{marketplaceId}/produtos")
-	public List<List<Produto>> ProdutosPorMarketPlaces(@PathVariable("marketplaceId") Long Id) { 
-		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-		
-		if(marketplace.isPresent()) {
-			List<Fornecedor> fornecedors = marketplace.get().getFornecedors();
-			List<List<Produto>> listProdutos = new ArrayList<>();
-			fornecedors.forEach(fornecedor -> listProdutos.add(fornecedor.getProdutos()));
-			return listProdutos;
-		}	
-		return null;
-	}
-	
+		public List<List<Produto>> ProdutosPorMarketPlaces(@PathVariable("marketplaceId") Long Id) { 
+			Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+			
+			if(marketplace.isPresent()) {
+				List<Fornecedor> fornecedors = marketplace.get().getFornecedors();
+				List<List<Produto>> listProdutos = new ArrayList<>();
+				fornecedors.forEach(fornecedor -> listProdutos.add(fornecedor.getProdutos()));
+				return listProdutos;
+			}	
+			return null;
+		}
+
 	// -> /marketplace/marketplaceId/pedidos
 	@GetMapping("/{marketplaceId}/pedidos")
 	public List<Pedido> PedidosPorMarketPlaces(@PathVariable("marketplaceId") Long Id) { 
@@ -294,5 +293,6 @@ public class MarketPlaceControler {
 		}
 			
 	}
+	
 	
 }

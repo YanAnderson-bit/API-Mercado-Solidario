@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercado_solidario.api.entity.Grupo;
-import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.GrupoRepository;
 import com.mercado_solidario.api.service.GrupoServices;
@@ -42,17 +41,6 @@ public class GrupoControler {
 	@GetMapping
 	public List<Grupo> listar() {
 		return grupoRepository.findAll();
-	}
-	
-	@GetMapping("/lista-usuarios/{grupoId}")
-	public ResponseEntity<List<Usuario>> listarUsuarios(@PathVariable("grupoId") Long Id) {
-		Optional<Grupo> grupo = grupoRepository.findById(Id);
-		
-		if(grupo.isPresent()) {
-			return ResponseEntity.ok(grupo.get().getUsuarios());
-		}
-		
-		return ResponseEntity.notFound().build();
 	}
 	
 	@GetMapping("/{grupoId}") // -> /grupos/grupoId 
