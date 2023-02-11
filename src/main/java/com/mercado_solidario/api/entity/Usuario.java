@@ -5,9 +5,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -37,20 +40,26 @@ public class Usuario {
 	@Column(nullable = true)
 	private String email;
 	
+	@JsonIgnore
 	@Column(nullable = false)
 	private String senha;
 	
 	@Column(nullable = false)
 	private Date dataCadastro;
 	
-	@JsonIgnore
+	//@JsonIgnore
 	//@ManyToOne
 	//@JoinColumn(nullable = false)
 	@Embedded
+	/*@AttributeOverrides({
+		  @AttributeOverride( name = "firstName", column = @Column(name = "contact_first_name")),
+		  @AttributeOverride( name = "lastName", column = @Column(name = "contact_last_name")),
+		  @AttributeOverride( name = "phone", column = @Column(name = "contact_phone"))
+		})*/
 	private Endereço endereço;
 	
 	//@JsonIgnore
-	@ManyToMany//(fetch = FetchType.LAZY)
+	@ManyToMany(fetch = FetchType.EAGER)
 	//@JoinColumn(name = "grupo_id", nullable = false)
 	//private Grupo grupo;
 	@JoinTable(name = "user_grupo", joinColumns =  @JoinColumn(name = "user_id"),
@@ -60,9 +69,12 @@ public class Usuario {
 	@JsonIgnore
 	@OneToMany(mappedBy="usuario")
     private List<Pedido> pedidos;
+	
+	@Column(nullable = false)
+	private boolean isNew;
 
 	public boolean isNew() {
-		return getId() == null;
+		return this.isNew;
 	}
 	
 	public void adicionarGrupo(Grupo grupo) {

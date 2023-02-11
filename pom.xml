@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.mercado_solidario</groupId>
 	<artifactId>API_Mercado_Solidario</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>latest</version>
 	<name>API_Mercado_Solidario</name>
 	<description>API do projeto Mercado Solidario</description>
 	<properties>
@@ -82,22 +82,51 @@
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
 		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
-				</configuration>
+	
+	<profiles>
+		<profile>
+		<id>docker</id>
+			<build>
+			<plugins>
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+					<configuration>
+						<excludes>
+							<exclude>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+							</exclude>
+						</excludes>
+					</configuration>
+				</plugin>
+				<plugin>
+				  <groupId>com.spotify</groupId>
+				  <artifactId>dockerfile-maven-plugin</artifactId>
+				  <version>1.4.13</version>
+				  <executions>
+				    <execution>
+				      <id>default</id>
+				      <goals>
+				        <goal>build</goal>
+				        <goal>push</goal>
+				      </goals>
+				    </execution>
+				  </executions>
+				  <configuration>
+				    <repository>mercadosolidario-api</repository>
+				    <tag>${project.version}</tag>
+				    <buildArgs>
+				      <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
+				    </buildArgs>
+			  </configuration>
 			</plugin>
 		</plugins>
 	</build>
+		
+		</profile>
+	</profiles>
+
+	
 
 </project>

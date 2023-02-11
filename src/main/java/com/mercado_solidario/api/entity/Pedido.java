@@ -121,6 +121,11 @@ public class Pedido {
 		this.setStatus("CONFIRMED");
 	}
 	
+	public void entregue() {
+		this.setDataEntrega(Date.from(Instant.now()));
+		this.setStatus("ENTREGUE");
+	}
+	
 	public void cancelar() {
 		this.setDataCançelamento(Date.from(Instant.now()));
 		this.setStatus("CANCELED");

@@ -264,6 +264,58 @@ public class MarketPlaceControler {
 		merge(campos, marketplace.get());		
 		return atualizar(Id,marketplace.get());
 	}
+	
+	@PatchMapping("/{marketplaceId}/abrir") 
+	public ResponseEntity<?> abrir(@PathVariable("marketplaceId") Long Id) {
+		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+			
+		if(marketplace.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+				
+		marketplace.get().abrir();
+		
+		return atualizar(Id,marketplace.get());
+	}
+	
+	@PatchMapping("/{marketplaceId}/fechar") 
+	public ResponseEntity<?> fechar(@PathVariable("marketplaceId") Long Id) {
+		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+			
+		if(marketplace.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+				
+		marketplace.get().fechar();
+		
+		return atualizar(Id,marketplace.get());
+	}
+	
+	@PatchMapping("/{marketplaceId}/ativar") 
+	public ResponseEntity<?> ativar(@PathVariable("marketplaceId") Long Id) {
+		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+			
+		if(marketplace.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+				
+		marketplace.get().ativar();
+		
+		return atualizar(Id,marketplace.get());
+	}
+	
+	@PatchMapping("/{marketplaceId}/desativar") 
+	public ResponseEntity<?> desativar(@PathVariable("marketplaceId") Long Id) {
+		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
+			
+		if(marketplace.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+				
+		marketplace.get().desativar();
+		
+		return atualizar(Id,marketplace.get());
+	}
 			
 	private void merge(Map<String, Object> camposOrigem, MarketPlace marketplaceDestino) {
 		ObjectMapper objectMapper = new ObjectMapper();

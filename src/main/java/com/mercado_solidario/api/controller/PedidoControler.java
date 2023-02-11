@@ -230,6 +230,19 @@ public class PedidoControler {
 		return atualizar(Id,pedido.get());
 	}	
 	
+	@PatchMapping("/entregue/{pedidoId}")
+	public ResponseEntity<?> entregue(@PathVariable("pedidoId") Long Id) {
+		Optional<Pedido> pedido = pedidoRepository.findById(Id);
+		
+		if(pedido.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+		
+		pedido.get().entregue();
+		
+		return atualizar(Id,pedido.get());
+	}
+	
 	@PatchMapping("/cancelar/{pedidoId}")
 	public ResponseEntity<?> cancelar(@PathVariable("pedidoId") Long Id) {
 		Optional<Pedido> pedido = pedidoRepository.findById(Id);

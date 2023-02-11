@@ -1,10 +1,15 @@
 package com.mercado_solidario.api.controller;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
+import javax.swing.GroupLayout.Group;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +29,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mercado_solidario.api.entity.Endereço;
+import com.mercado_solidario.api.entity.Grupo;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
+import com.mercado_solidario.api.repository.GrupoRepository;
 import com.mercado_solidario.api.repository.UsuarioRepository;
 import com.mercado_solidario.api.service.UsuarioServices;
 
@@ -35,6 +43,9 @@ public class UsuarioControler {
 	
 	@Autowired 
 	private UsuarioRepository usuarioRepository;
+	
+	@Autowired 
+	private GrupoRepository grupoRepository;
 	
 	@Autowired 
 	private UsuarioServices usuarioServices;
@@ -92,17 +103,25 @@ public class UsuarioControler {
 		    "email":"mail",
 		    "senha":"*****",
 		    "endereço": {
-		    	"id": id
-		    },
-		    "grupo": {
-		    	"id": id
+		      ...
 		    }
 		}
 		*/
-		return usuario;
-		//usuario.setDataCadastro(Date.from(Instant.now()));
+		//return usuario;
+		usuario.setDataCadastro(Date.from(Instant.now()));
 		//usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-	//	return usuarioServices.salvar(usuario);
+		
+		Set<Grupo> visitorGrupos = new HashSet<>();
+		Grupo grupo = grupoRepository.findById((long) 1).get();
+		visitorGrupos.add(grupo);
+		usuario.setGrupo(visitorGrupos);
+		
+		Endereço endereço = usuario.getEndereço(); 
+		usuario.setEndereço(endereço);
+		
+		usuario.setNew(true);
+		
+		return usuarioServices.salvar(usuario);
 	}
 	
 	//Comandos PUT
@@ -115,7 +134,7 @@ public class UsuarioControler {
 			usuario.setDataCadastro(cadastro);
 	
 			if(usuarioAtual.isPresent()) {
-				BeanUtils.copyProperties(usuario, usuarioAtual.get(), "id", "endereço");
+				BeanUtils.copyProperties(usuario, usuarioAtual.get(), "id", "endereço", "senha");
 				Usuario usuarioSalvo = usuarioServices.salvar(usuarioAtual.get());
 				
 				
@@ -141,6 +160,27 @@ public class UsuarioControler {
 		merge(campos, usuario.get());		
 	
 		return atualizar(Id,usuario.get());
+	}
+	
+	@PatchMapping("/{usuarioId}/{oldPassword}/{newPassword}") 
+	public void atualizaSenha(@PathVariable("usuarioId") Long Id, @PathVariable("oldPassword") String senhaAtual,@PathVariable("newPassword") String novaSenha) {
+		
+		try {
+			usuarioServices.alterarSenha(Id, senhaAtual, novaSenha);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	@PatchMapping("/{usuarioId}/{grupoId}/{vincular}") 
+	public void vincularDesvincularGrupo(@PathVariable("usuarioId") Long usuarioId, @PathVariable("grupoId") Long grupoId, @PathVariable("vincular") boolean vincular) {
+		
+		if(vincular) {
+			usuarioServices.associarGrupo(usuarioId, grupoId);
+		}else {
+			usuarioServices.desassociarGrupo(usuarioId, grupoId);
+		}
 	}
 		
 		

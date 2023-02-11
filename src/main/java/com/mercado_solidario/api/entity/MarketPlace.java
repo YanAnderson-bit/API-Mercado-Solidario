@@ -75,4 +75,20 @@ public class MarketPlace {
 	@ManyToMany
 	//@JoinColumn(nullable = false)
 	private List<FormasDePagamento> formasDePagamento = new ArrayList<>();
+	
+	public void abrir() {
+		this.setAberto(true);
+	}
+	
+	public void fechar() {
+		this.setAberto(false);
+	}
+	
+	public void ativar() {
+		this.setAtivo(true);
+	}
+	
+	public void desativar() {
+		this.setAtivo(false);
+	}
 }

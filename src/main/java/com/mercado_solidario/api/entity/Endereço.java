@@ -47,7 +47,7 @@ public class Endereço {
 	private Integer numero;
 	
 	@Column(nullable = false, name = "endereco_complemento")
-	private String complementoo;
+	private String complemento;
 	
 	@Column(nullable = false, name = "endereco_bairro")
 	private String bairro;

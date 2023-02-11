@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.repository.UsuarioRepository;
@@ -20,10 +19,11 @@ public class JpaUserDetailsService implements UserDetailsService {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 	
-	@Transactional(readOnly = true)
+	//@Transactional(readOnly = true)
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		Usuario usuario = usuarioRepository.findByEmail(email)
+		//Usuario usuario = usuarioRepository.findByNome(email)
 				.orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com e-mail informado"));
 		
 		return new AuthUser(usuario, getAuthorities(usuario));

@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,11 +29,11 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter{
 	
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth)throws Exception {
-		auth.inMemoryAuthentication()
+		/*auth.inMemoryAuthentication()
 			.withUser("Test")
 				.password( passwordEncoder().encode("123"))
-				.roles("ADMIN");
-		
+				.roles("ADMIN");*/
+		auth.userDetailsService(jpaUserDetailsService);
 	}
 	
 	@Override
@@ -47,7 +48,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter{
 			.and()	
 				.csrf().disable();//desabilita cookies para proteger contra ataques*/
 		//super.configure(http);
-		http.csrf().disable()
+		/*http.csrf().disable()
 		/*authorizeRequests()//.anyRequest().permitAll()
 				.antMatchers(HttpMethod.GET).permitAll()
 				.antMatchers(HttpMethod.POST, "/usuarios").permitAll()
@@ -59,10 +60,20 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter{
 				.anyRequest().authenticated()*/
 			
 			//.and()
-			.cors().and()
+/*			.cors().and()
 			.oauth2ResourceServer()
 				.jwt()
-				.jwtAuthenticationConverter(jwtAuthenticationConverterInstaciator());
+				.jwtAuthenticationConverter(jwtAuthenticationConverterInstaciator());*/
+		http.csrf().disable()
+			.authorizeRequests()
+				.antMatchers(HttpMethod.GET).permitAll()
+				.antMatchers(HttpMethod.POST, "/usuarios").permitAll()
+				.antMatchers(HttpMethod.POST).permitAll()//.hasAuthority("POST_PATCH_ALLOWED")
+				.antMatchers(HttpMethod.PATCH).permitAll()//.hasAuthority("POST_PATCH_ALLOWED")
+				.antMatchers(HttpMethod.PATCH, "/usuarios").hasAuthority("ADMIN_USER")
+				.antMatchers(HttpMethod.DELETE).hasAuthority("DELETE_ALLOWED")
+				.antMatchers(HttpMethod.POST, "/pedidos").permitAll()//.hasAuthority("CREATE_PEDIDO")
+				.anyRequest().authenticated();
 	}
 	
 	@Bean

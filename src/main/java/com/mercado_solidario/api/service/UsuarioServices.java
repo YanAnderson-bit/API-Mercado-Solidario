@@ -25,8 +25,8 @@ public class UsuarioServices {
 	//@Autowired 
 	//private GrupoRepository grupoRepository;
 	
-//	@Autowired 
-//	private EndereçoRepository endereçoRepository;
+	//@Autowired 
+	//private EndereçoServices endereçoServices;
 	
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -50,10 +50,13 @@ public class UsuarioServices {
 		
 		usuario.setEndereço(endereço);*/
 		//usuario.setGrupo(grupo);
-		if(ExistingUser.isPresent() && !ExistingUser.get().equals(usuario)) throw new EntidadeEmUsoExeption(
+		if(ExistingUser.isPresent()) throw new EntidadeEmUsoExeption(
 				String.format("Usuario com e-mail %s já cadastrado", usuario.getEmail())); 
 		
-		if(usuario.isNew()) usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+		if(usuario.isNew()) {
+			usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+			usuario.setNew(false);
+		}
 		
 		return usuarioRepository.save(usuario);
 	}
@@ -66,14 +69,14 @@ public class UsuarioServices {
 	}
 	
 	@Transactional
-	public void alterarSenha(Long usuarioId, String senhaAtual, String novaSenha) {
+	public void alterarSenha(Long usuarioId, String senhaAtual, String novaSenha) throws Exception {
 		Usuario usuario = buscarOuFalhar(usuarioId);
 		
-/*		if (!passwordEncoder.matches(senhaAtual, usuario.getSenha())) {
-			throw new NegocioException("Senha atual informada não coincide com a senha do usuário.");
+		if (!passwordEncoder.matches(senhaAtual, usuario.getSenha())) {
+			throw new Exception("Senha atual informada não coincide com a senha do usuário.");
 		}
 		
-		usuario.setSenha(passwordEncoder.encode(novaSenha));*/
+		usuario.setSenha(passwordEncoder.encode(novaSenha));
 	}
 
 	@Transactional

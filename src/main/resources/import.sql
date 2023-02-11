@@ -36,9 +36,9 @@ insert into  market_place(nome,classificacao, taxa_frete, ativo, aberto, data_ca
 insert into fornecedor (nome, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, market_place_id) values  ("Jorge", '52300-000', null,12,'casa','centro', 1, 1)
 insert into fornecedor (nome, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, market_place_id) values ("Lory",'62100-000', null,22,'casa','centro', 2, 1)
 
-insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("Leo","@Uno", "$2y$12$YRzSnhU9Afxu06xd1SxKKOjZqk60XNTBn1enySsoQphwpgak44zHG", "2022-02-02",  '52300-000', null,12,'casa','centro', 1)
-insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("Rorona","@Dos", "456", "2022-04-02", '62100-000', null,22,'casa','centro', 2)
-insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("Test","Test@test", "123456", "2022-04-02", '62100-000', null,22,'casa','centro', 2)
+insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("Leo","@Uno", "$2a$10$XRoEcCQlk/z5Kaa7a.J6tusFALrLfNlqVVmPnr8uEOit8NoyCarpa", "2022-02-02",  '52300-000', null,12,'casa','centro', 1)
+insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("Rorona","@Dos", "$2a$10$XRoEcCQlk/z5Kaa7a.J6tusFALrLfNlqVVmPnr8uEOit8NoyCarpa", "2022-04-02", '62100-000', null,22,'casa','centro', 2)
+insert into usuario (nome, email, senha, data_cadastro, endereco_cep, endereco_logadouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade) values ("Test","Test@test", "$2a$10$XRoEcCQlk/z5Kaa7a.J6tusFALrLfNlqVVmPnr8uEOit8NoyCarpa", "2022-04-02", '62100-000', null,22,'casa','centro', 2)
 
 insert into user_grupo (user_id, grupo_id) values (1,1)
 insert into user_grupo (user_id, grupo_id) values (2,2)
