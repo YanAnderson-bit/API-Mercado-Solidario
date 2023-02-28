@@ -10,12 +10,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
+import com.mercado_solidario.api.entity.Cidade;
 import com.mercado_solidario.api.entity.FormasDePagamento;
 import com.mercado_solidario.api.entity.Fornecedor;
 import com.mercado_solidario.api.entity.MarketPlace;
 import com.mercado_solidario.api.entity.Pedido;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
+import com.mercado_solidario.api.repository.CidadeRepository;
 import com.mercado_solidario.api.repository.FormasDePagamentoRepository;
 import com.mercado_solidario.api.repository.FornecedorRepository;
 import com.mercado_solidario.api.repository.MarketPlaceRepository;
@@ -36,6 +38,8 @@ public class MarketPlaceServices {
 	@Autowired 
 	private PedidoRepository pedidoRepository;
 	
+	@Autowired 
+	private CidadeRepository cidadeRepository;
 //	@Autowired 
 //	private EndereçoRepository endereçoRepository;
 	
@@ -54,6 +58,15 @@ public class MarketPlaceServices {
 		
 		marketplace.setEndereço(endereço);
 		*/
+
+		Long IdCidade = marketplace.getEndereço().getCidade().getId();	
+		Cidade cidade = cidadeRepository.findById(IdCidade)
+				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
+						String.format("Não existe cadastro de cidade de código %d", IdCidade)));
+		
+		marketplace.getEndereço().setCidade(cidade);
+		
+		
 		List<Long> idsFormasPagamento = new ArrayList<>();
 		marketplace.getFormasDePagamento().forEach(f -> idsFormasPagamento.add(f.getId()));
 		

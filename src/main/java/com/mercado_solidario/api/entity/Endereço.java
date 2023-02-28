@@ -46,7 +46,7 @@ public class Endereço {
 	@Column(nullable = false, name = "endereco_numero")
 	private Integer numero;
 	
-	@Column(nullable = false, name = "endereco_complemento")
+	@Column(nullable = true, name = "endereco_complemento")
 	private String complemento;
 	
 	@Column(nullable = false, name = "endereco_bairro")

@@ -10,10 +10,12 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.mercado_solidario.api.entity.Cidade;
 import com.mercado_solidario.api.entity.Grupo;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
+import com.mercado_solidario.api.repository.CidadeRepository;
 import com.mercado_solidario.api.repository.UsuarioRepository;
 
 @Service
@@ -24,7 +26,9 @@ public class UsuarioServices {
 	
 	//@Autowired 
 	//private GrupoRepository grupoRepository;
-	
+
+	@Autowired 
+	private CidadeRepository cidadeRepository;
 	//@Autowired 
 	//private EndereçoServices endereçoServices;
 	
@@ -50,6 +54,15 @@ public class UsuarioServices {
 		
 		usuario.setEndereço(endereço);*/
 		//usuario.setGrupo(grupo);
+		
+
+		Long IdCidade = usuario.getEndereço().getCidade().getId();	
+		Cidade cidade = cidadeRepository.findById(IdCidade)
+				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
+						String.format("Não existe cadastro de cidade de código %d", IdCidade)));
+		
+		usuario.getEndereço().setCidade(cidade);
+		
 		if(ExistingUser.isPresent()) throw new EntidadeEmUsoExeption(
 				String.format("Usuario com e-mail %s já cadastrado", usuario.getEmail())); 
 		

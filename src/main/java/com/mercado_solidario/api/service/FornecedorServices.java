@@ -8,11 +8,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
+import com.mercado_solidario.api.entity.Cidade;
 import com.mercado_solidario.api.entity.Fornecedor;
 import com.mercado_solidario.api.entity.MarketPlace;
 import com.mercado_solidario.api.entity.Produto;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
+import com.mercado_solidario.api.repository.CidadeRepository;
 import com.mercado_solidario.api.repository.FornecedorRepository;
 import com.mercado_solidario.api.repository.MarketPlaceRepository;
 import com.mercado_solidario.api.repository.ProdutoRepository;
@@ -23,8 +25,8 @@ public class FornecedorServices {
 	@Autowired 
 	private FornecedorRepository fornecedorRepository;
 	
-//	@Autowired 
-//	private EndereçoRepository endereçoRepository;
+	@Autowired 
+	private CidadeRepository cidadeRepository;
 	
 	@Autowired 
 	private ProdutoRepository produtoRepository;
@@ -33,11 +35,15 @@ public class FornecedorServices {
 	private MarketPlaceRepository marketplaceRepository;
 	
 	public Fornecedor salvar(Fornecedor fornecedor) { 
-	/*	Long Id = fornecedor.getEndereço().getId();	
-		Endereço endereço = endereçoRepository.findById(Id)
+		Long IdCidade = fornecedor.getEndereço().getCidade().getId();	
+		Cidade cidade = cidadeRepository.findById(IdCidade)
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
-						String.format("Não existe cadastro de endereço de código %d", Id)));
-		*/
+						String.format("Não existe cadastro de cidade de código %d", IdCidade)));
+		
+		fornecedor.getEndereço().setCidade(cidade);
+		//return marketplaceRepository.findById().;
+		//return fornecedor;
+		
 		Long Id = fornecedor.getMarketPlace().getId();
 		MarketPlace marketPlace = marketplaceRepository.findById(Id)
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(

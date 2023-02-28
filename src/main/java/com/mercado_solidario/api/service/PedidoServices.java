@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
+import com.mercado_solidario.api.entity.Cidade;
 import com.mercado_solidario.api.entity.MarketPlace;
 import com.mercado_solidario.api.entity.Pedido;
 import com.mercado_solidario.api.entity.PedidoProduto;
@@ -15,6 +16,7 @@ import com.mercado_solidario.api.entity.Produto;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeEmUsoExeption;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
+import com.mercado_solidario.api.repository.CidadeRepository;
 import com.mercado_solidario.api.repository.MarketPlaceRepository;
 import com.mercado_solidario.api.repository.PedidoRepository;
 import com.mercado_solidario.api.repository.ProdutoRepository;
@@ -30,6 +32,9 @@ public class PedidoServices {
 	
 //	@Autowired 
 //	private EndereçoRepository endereçoRepository;
+
+	@Autowired 
+	private CidadeRepository cidadeRepository;
 	
 	@Autowired 
 	private ProdutoRepository produtoRepository;
@@ -53,6 +58,15 @@ public class PedidoServices {
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de endereço de código %d", idEndereço)));
 		*/
+
+		Long IdCidade = pedido.getEndereço().getCidade().getId();	
+		Cidade cidade = cidadeRepository.findById(IdCidade)
+				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
+						String.format("Não existe cadastro de cidade de código %d", IdCidade)));
+				
+		pedido.getEndereço().setCidade(cidade);
+				
+				
 		List<Long> IdProdutos = new ArrayList<>();
 		List<PedidoProduto> pedidosProdutos = new ArrayList<>();
 		pedido.getPedidoProdutos().forEach(produto ->{
