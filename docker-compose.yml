@@ -1,28 +1,30 @@
 version: "3.9"
 
-networks:
-	mercado-solidario-network:
-		driver: bridge
-
 services:
-  algafood-mysql:
+  mysql:
     image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_ROOT_PASSWORD: "123"
+      MYSQL_DATABASE: "mercado-solidario"
+    volumes:
+      - data:/var/lib/mysql
     ports:
-      - "3316:3316"
+      - "3306:3306"
     networks:
       - mercado-solidario-network
-      
-    mercadosolidario-api:
-    	image: mercadosolidario-api
-    	environment:
-    		HOST: mercadosolidario-mysql
-    	ports:
-    		- "8080:8080"
-    	networks:
-    		- mercado-solidario-network
-    	depends_on:
-    		- mercadosolidario-mysql
+  adminer:
+    image: adminer:standalone
+    depends_on:
+      - mysql
+    ports:
+      - 8081:8080
+    networks:
+      - mercado-solidario-network
+
+volumes:
+  data:
+    name: "mercado-solidario-volume"
+
+networks:
+  mercado-solidario-network:
+    driver: bridge
