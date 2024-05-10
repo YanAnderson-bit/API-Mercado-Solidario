@@ -7,6 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: "123"
       MYSQL_DATABASE: "mercado-solidario"
     volumes:
+      - ./src/main/resources:/docker-entrypoint-initdb.d
       - data:/var/lib/mysql
     ports:
       - "3306:3306"
