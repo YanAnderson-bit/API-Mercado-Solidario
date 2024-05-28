@@ -34,101 +34,101 @@ public class Pedido {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	@Column(nullable = false)
 	private String codigo;
-	
+
 	@Column(nullable = false)
 	private BigDecimal subTotal;
-	
+
 	@Column(nullable = false)
 	private BigDecimal taxaFrete;
-	
+
 	@Column(nullable = false)
 	private BigDecimal valorTotal;
-	
-	//@JsonIgnore
+
+	// @JsonIgnore
 	@CreationTimestamp
 	@Column(nullable = false)
 	private Date dataCriacao;
-	
+
 	@Column(nullable = true)
 	private Date dataConfirmação;
-	
+
 	@Column(nullable = true)
 	private Date dataCançelamento;
-	
+
 	@Column(nullable = true)
 	private Date dataEntrega;
-	
-	@Column(nullable = false)
-	private String status;//Status Pedido
-	
-	@JsonIgnoreProperties(value = {"grupo", "endereço"})
-	@ManyToOne
-    @JoinColumn(name = "usuario_id")
-    private Usuario usuario;
-	
-	@JsonIgnore
-	@ManyToOne//(fetch = FetchType.LAZY)
-	private MarketPlace marketPlace;
-	
-	//@ManyToOne
-    //@JoinColumn(name = "endereço_id")
-	@JsonIgnore
-	@Embedded
-    private Endereço endereço;	
 
-	@JsonIgnoreProperties(value = {"pedido"})
-	@OneToMany(mappedBy="pedido", cascade = CascadeType.ALL)
-    private List<PedidoProduto> pedidoProdutos = new ArrayList<>();
-	
+	@Column(nullable = false)
+	private String status;// Status Pedido
+
+	@JsonIgnoreProperties(value = { "grupo", "endereço" })
+	@ManyToOne
+	@JoinColumn(name = "usuario_id")
+	private Usuario usuario;
+
+	@JsonIgnore
+	@ManyToOne // (fetch = FetchType.LAZY)
+	private MarketPlace marketPlace;
+
+	// @ManyToOne
+	// @JoinColumn(name = "endereço_id")
+	// @JsonIgnore
+	@Embedded
+	private Endereço endereço;
+
+	@JsonIgnoreProperties(value = { "pedido" })
+	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
+	private List<PedidoProduto> pedidoProdutos = new ArrayList<>();
+
 	public void incrementoDecremento(int index, int qauntidade, boolean incremento) {
 		List<PedidoProduto> pedidoProdutosAlterado = this.getPedidoProdutos();
 		if (incremento) {
 			pedidoProdutosAlterado.get(index).addQuantidade(qauntidade);
-		}else {
+		} else {
 			pedidoProdutosAlterado.get(index).subQuantidade(qauntidade);
 		}
 		this.setPedidoProdutos(pedidoProdutosAlterado);
 		this.calcularSubTotal();
 		this.calcularValorTotal();
-    }
-	
+	}
+
 	public void calcularSubTotal() {
 		float soma = 0;
-		for(int i=0; i<this.getPedidoProdutos().size();i++) {
-			soma+=this.getPedidoProdutos().get(i).getPrecoTotal().floatValue();
+		for (int i = 0; i < this.getPedidoProdutos().size(); i++) {
+			soma += this.getPedidoProdutos().get(i).getPrecoTotal().floatValue();
 		}
 		this.setSubTotal(BigDecimal.valueOf(soma));
 	}
-	
+
 	public void calcularValorTotal() {
 		this.setValorTotal(this.getSubTotal().multiply(this.getTaxaFrete().add(BigDecimal.valueOf(1))));
 	}
-	
-	public void criacao(Pedido pedido) {//o que estiver confirmado não pode ser alterado
-			this.setStatus("CREATED");
-		if(pedido==null) {
+
+	public void criacao(Pedido pedido) {// o que estiver confirmado não pode ser alterado
+		this.setStatus("CREATED");
+		if (pedido == null) {
 			this.setDataCriacao(Date.from(Instant.now()));
-		}else{
+		} else {
 			this.setDataCriacao(pedido.getDataCriacao());
 		}
 	}
-	
+
 	public void confirmar() {
 		this.setDataConfirmação(Date.from(Instant.now()));
 		this.setStatus("CONFIRMED");
 	}
-	
+
 	public void entregue() {
 		this.setDataEntrega(Date.from(Instant.now()));
 		this.setStatus("ENTREGUE");
 	}
-	
+
 	public void cancelar() {
 		this.setDataCançelamento(Date.from(Instant.now()));
 		this.setStatus("CANCELED");
 	}
-	
+
 }

@@ -11,6 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -26,21 +27,21 @@ public class Fornecedor {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	@Column(nullable = false)
 	private String nome;
-	
-//	@OneToOne
-//	@JoinColumn
-	//@JsonIgnore
+
+	// @OneToMany
+	// @JoinColumn
+	// @JsonIgnore
 	@Embedded
 	private Endereço endereço;
-	
-	//@JsonIgnore
-	@OneToMany(mappedBy="fornecedor")
-    private List<Produto> produtos = new ArrayList<>();
-	
-	@JsonIgnoreProperties("fornecedors")
-	@ManyToOne//(fetch = FetchType.LAZY)
+
+	// @JsonIgnore
+	@OneToMany(mappedBy = "fornecedor")
+	private List<Produto> produtos = new ArrayList<>();
+
+	@JsonIgnoreProperties("fornecedores")
+	@ManyToOne // (fetch = FetchType.LAZY)
 	private MarketPlace marketPlace;
 }

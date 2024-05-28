@@ -31,63 +31,63 @@ public class MarketPlace {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	@Column(nullable = false)
 	private String nome;
-	
+
 	@Column(nullable = true)
 	private String classificacao;
-	
+
 	@Column(nullable = false)
 	private BigDecimal taxaFrete;
-	
+
 	@Column(nullable = false)
 	private boolean ativo;
-	
+
 	@Column(nullable = false)
 	private boolean aberto;
-	
-	//@JsonIgnore
+
+	// @JsonIgnore
 	@CreationTimestamp
 	@Column(nullable = false)
 	private Date dataCadastro;
-	
-	//@JsonIgnore
+
+	// @JsonIgnore
 	@UpdateTimestamp
 	@Column(nullable = false)
 	private Date dataAtualizacao;
-	
-	//@OneToOne
-	//@JoinColumn
-	@JsonIgnore
+
+	// @OneToOne
+	// @JoinColumn
+	// @JsonIgnore
 	@Embedded
 	private Endereço endereço;
-	
-	//@JsonIgnore
-	@OneToMany(mappedBy="marketPlace")
-    private List<Fornecedor> fornecedors = new ArrayList<>();
-	
-	//@JsonIgnore
-	@OneToMany(mappedBy="marketPlace")
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "marketPlace")
+	private List<Fornecedor> fornecedores = new ArrayList<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "marketPlace")
 	private List<Pedido> pedidos = new ArrayList<>();
-	
-	//@JsonIgnore
+
+	// @JsonIgnore
 	@ManyToMany
-	//@JoinColumn(nullable = false)
+	// @JoinColumn(nullable = false)
 	private List<FormasDePagamento> formasDePagamento = new ArrayList<>();
-	
+
 	public void abrir() {
 		this.setAberto(true);
 	}
-	
+
 	public void fechar() {
 		this.setAberto(false);
 	}
-	
+
 	public void ativar() {
 		this.setAtivo(true);
 	}
-	
+
 	public void desativar() {
 		this.setAtivo(false);
 	}
