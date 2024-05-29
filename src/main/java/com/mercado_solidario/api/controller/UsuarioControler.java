@@ -9,7 +9,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.HashSet;
 
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
@@ -38,6 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercado_solidario.api.entity.Cidade;
 import com.mercado_solidario.api.entity.Endereço;
 import com.mercado_solidario.api.entity.Estado;
+import com.mercado_solidario.api.entity.Grupo;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.GrupoRepository;
@@ -134,7 +137,15 @@ public class UsuarioControler {
 	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<EntityModel<Usuario>> adicionar(@RequestBody Usuario usuario) {
 		usuario.setDataCadastro(Date.from(Instant.now()));
+		Set<Grupo> visitorGrupos = new HashSet<Grupo>();
+		Grupo grupo = grupoRepository.findById((long) 1).get();
+		visitorGrupos.add(grupo);
+		usuario.setGrupo(visitorGrupos);
+
+		Endereço endereço = usuario.getEndereço();
+		usuario.setEndereço(endereço);
 		usuario.setNew(true);
+
 		Usuario savedUsuario = usuarioServices.salvar(usuario);
 
 		return ResponseEntity.created(linkTo(methodOn(UsuarioControler.class).buscar(savedUsuario.getId())).toUri())
@@ -162,8 +173,7 @@ public class UsuarioControler {
 						.withRel("allUsuarios")));
 	}
 
-	@PatchMapping("/{usuarioId}/{grupoId}/{vincular}")
-	public void vincularDesvincularGrupo(@PathVariable("usuarioId") Long usuarioId,
+	public ResponseEntity<?> vincularDesvincularGrupo(@PathVariable("usuarioId") Long usuarioId,
 			@PathVariable("grupoId") Long grupoId, @PathVariable("vincular") boolean vincular) {
 
 		if (vincular) {
@@ -171,6 +181,16 @@ public class UsuarioControler {
 		} else {
 			usuarioServices.desassociarGrupo(usuarioId, grupoId);
 		}
+
+		EntityModel<Void> entityModel = EntityModel.of(null);
+		entityModel.add(linkTo(methodOn(this.getClass()).vincularDesvincularGrupo(usuarioId, grupoId, true))
+				.withRel("associarGrupo"));
+		entityModel.add(linkTo(methodOn(this.getClass()).vincularDesvincularGrupo(usuarioId, grupoId, false))
+				.withRel("desassociarGrupo"));
+		entityModel.add(linkTo(methodOn(UsuarioControler.class).buscar(usuarioId)).withRel("usuario"));
+		entityModel.add(linkTo(methodOn(GrupoControler.class).buscar(grupoId)).withRel("grupo"));
+
+		return ResponseEntity.ok(entityModel);
 	}
 
 	private void merge(Map<String, Object> camposOrigem, Usuario usuarioDestino) {
