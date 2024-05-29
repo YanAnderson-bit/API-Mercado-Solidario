@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
@@ -14,6 +15,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -38,6 +42,9 @@ import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.FornecedorRepository;
 import com.mercado_solidario.api.service.FornecedorServices;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping(value = "/fornecedores")
 public class FornecedorControler {
@@ -49,7 +56,7 @@ public class FornecedorControler {
 	private FornecedorServices fornecedorServices;
 
 	@GetMapping
-	public List<Fornecedor> listar(
+	public CollectionModel<EntityModel<Fornecedor>> listar(
 			@RequestParam(required = false) String nome,
 			@RequestParam(required = false) String cidade,
 			@RequestParam(required = false) String estado) {
@@ -72,68 +79,81 @@ public class FornecedorControler {
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
-		return fornecedorRepository.findAll(spec);
+		List<EntityModel<Fornecedor>> fornecedores = fornecedorRepository.findAll(spec).stream()
+				.map(fornecedor -> EntityModel.of(fornecedor,
+						linkTo(methodOn(FornecedorControler.class).buscar(fornecedor.getId())).withSelfRel(),
+						linkTo(methodOn(FornecedorControler.class).listar(nome, cidade, estado))
+								.withRel("fornecedores")))
+				.collect(Collectors.toList());
+
+		return CollectionModel.of(fornecedores,
+				linkTo(methodOn(FornecedorControler.class).listar(nome, cidade, estado)).withSelfRel());
 	}
 
 	@GetMapping("/{fornecedorId}") // -> /fornecedores/fornecedoreId
-	public ResponseEntity<Fornecedor> buscar(@PathVariable("fornecedorId") Long Id) {
-		Optional<Fornecedor> fornecedor = fornecedorRepository.findById(Id);
-
-		if (fornecedor.isPresent()) {
-			return ResponseEntity.ok(fornecedor.get());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<Fornecedor>> buscar(@PathVariable("fornecedorId") Long Id) {
+		return fornecedorRepository.findById(Id)
+				.map(fornecedor -> EntityModel.of(fornecedor,
+						linkTo(methodOn(FornecedorControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(FornecedorControler.class).listar(null, null, null)).withRel("fornecedores")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando POST
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Fornecedor adicionar(@RequestBody Fornecedor fornecedor) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome":"nome",
-		 * "endereço": {
-		 * "id" = id
-		 * }
-		 * }
-		 */
-		return fornecedorServices.salvar(fornecedor);
+	/*
+	 * Modelo:
+	 * {
+	 * "nome":"nome",
+	 * "endereço": {
+	 * "id" = id
+	 * }
+	 * }
+	 */
+	public ResponseEntity<EntityModel<Fornecedor>> adicionar(@RequestBody Fornecedor fornecedor) {
+		Fornecedor savedFornecedor = fornecedorServices.salvar(fornecedor);
+		return ResponseEntity
+				.created(linkTo(methodOn(FornecedorControler.class).buscar(savedFornecedor.getId())).toUri())
+				.body(EntityModel.of(savedFornecedor,
+						linkTo(methodOn(FornecedorControler.class).buscar(savedFornecedor.getId())).withSelfRel(),
+						linkTo(methodOn(FornecedorControler.class).listar(null, null, null)).withRel("fornecedores")));
 	}
 
 	// Comandos PUT
 	@PutMapping("/{fornecedorId}")
 	public ResponseEntity<?> atualizar(@PathVariable("fornecedorId") Long Id, @RequestBody Fornecedor fornecedor) {
 		try {
-			Optional<Fornecedor> fornecedorAtual = fornecedorRepository.findById(Id);
-
-			if (fornecedorAtual.isPresent()) {
-				BeanUtils.copyProperties(fornecedor, fornecedorAtual.get(), "id", "endereço");
-				Fornecedor fornecedorSalvo = fornecedorServices.salvar(fornecedorAtual.get());
-
-				return ResponseEntity.ok(fornecedorSalvo);
-			}
-
-			return ResponseEntity.notFound().build();
+			return fornecedorRepository.findById(Id)
+					.map(fornecedorAtual -> {
+						BeanUtils.copyProperties(fornecedor, fornecedorAtual, "id");
+						Fornecedor updatedFornecedor = fornecedorServices.salvar(fornecedorAtual);
+						return ResponseEntity.ok(EntityModel.of(updatedFornecedor,
+								linkTo(methodOn(FornecedorControler.class).buscar(updatedFornecedor.getId()))
+										.withSelfRel(),
+								linkTo(methodOn(FornecedorControler.class).listar(null, null, null))
+										.withRel("fornecedores")));
+					})
+					.orElseGet(() -> ResponseEntity.notFound().build());
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
-
 	}
 
 	@PatchMapping("/{fornecedorId}")
 	public ResponseEntity<?> atualizaParcial(@PathVariable("fornecedorId") Long Id,
 			@RequestBody Map<String, Object> campos) {
-		Optional<Fornecedor> fornecedor = fornecedorRepository.findById(Id);
-
-		if (fornecedor.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		merge(campos, fornecedor.get());
-
-		return atualizar(Id, fornecedor.get());
+		return fornecedorRepository.findById(Id)
+				.map(fornecedor -> {
+					merge(campos, fornecedor);
+					fornecedorServices.salvar(fornecedor);
+					return ResponseEntity.ok(EntityModel.of(fornecedor,
+							linkTo(methodOn(FornecedorControler.class).buscar(fornecedor.getId())).withSelfRel(),
+							linkTo(methodOn(FornecedorControler.class).listar(null, null, null))
+									.withRel("fornecedores")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	private void merge(Map<String, Object> camposOrigem, Fornecedor fornecedorDestino) {
@@ -151,17 +171,22 @@ public class FornecedorControler {
 
 	// Comandos DELET
 	@DeleteMapping("/{fornecedorId}")
-	public ResponseEntity<Fornecedor> remover(@PathVariable("fornecedorId") Long Id) {
+	public ResponseEntity<?> remover(@PathVariable("fornecedorId") Long Id) {
 		try {
-
 			fornecedorServices.excluir(Id);
-			return ResponseEntity.noContent().build();
+			return ResponseEntity.noContent()
+					.header("Location",
+							linkTo(methodOn(FornecedorControler.class).listar(null, null, null)).toUri().toString())
+					.build();
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.notFound().build();
 		} catch (DataIntegrityViolationException e) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body(EntityModel.of(null,
+							linkTo(methodOn(FornecedorControler.class).buscar(Id)).withRel(IanaLinkRelations.SELF),
+							linkTo(methodOn(FornecedorControler.class).listar(null, null, null))
+									.withRel("fornecedores")));
 		}
-
 	}
 
 }
