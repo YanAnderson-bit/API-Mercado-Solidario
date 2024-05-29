@@ -2,15 +2,23 @@ package com.mercado_solidario.api.controller;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.persistence.criteria.Predicate;
+import javax.swing.GroupLayout.Group;
+import javax.persistence.criteria.Join;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -22,10 +30,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mercado_solidario.api.entity.Cidade;
+import com.mercado_solidario.api.entity.Endereço;
+import com.mercado_solidario.api.entity.Estado;
 import com.mercado_solidario.api.entity.Fornecedor;
 import com.mercado_solidario.api.entity.MarketPlace;
 import com.mercado_solidario.api.entity.Pedido;
@@ -46,8 +58,62 @@ public class MarketPlaceControler {
 
 	// Comando GET
 	@GetMapping
-	public List<MarketPlace> listar() {
-		return marketplaceRepository.findAll();
+	public List<MarketPlace> listar(@RequestParam(required = false) String nome,
+			@RequestParam(required = false) String email, @RequestParam(required = false) String cidade,
+			@RequestParam(required = false) String estado,
+			@RequestParam(required = false) String classificacao,
+			@RequestParam(required = false) Boolean ativo,
+			@RequestParam(required = false) Boolean aberto,
+			@RequestParam(required = false) BigDecimal taxaFreteInicial,
+			@RequestParam(required = false) BigDecimal taxaFreteFinal,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim) {
+		Specification<MarketPlace> spec = (root, query, criteriaBuilder) -> {
+			List<Predicate> predicates = new ArrayList<>();
+			if (nome != null) {
+				predicates.add(
+						criteriaBuilder.like(root.get("nome"), "%" + nome + "%"));
+			}
+			if (email != null) {
+				predicates.add(
+						criteriaBuilder.equal(root.get("email"), "%" + email + "%"));
+			}
+			if (classificacao != null) {
+				predicates.add(
+						criteriaBuilder.equal(root.get("classificacao"), "%" + classificacao + "%"));
+			}
+			if (taxaFreteFinal != null && taxaFreteInicial == null) {
+				predicates.add(
+						criteriaBuilder.lessThan(root.get("taxaFrete"), taxaFreteFinal));
+			} else if (taxaFreteInicial != null && taxaFreteFinal == null) {
+				predicates.add(
+						criteriaBuilder.greaterThan(root.get("taxaFrete"), taxaFreteInicial));
+			} else if (taxaFreteInicial != null && taxaFreteFinal != null) {
+				predicates.add(
+						criteriaBuilder.between(root.get("taxaFrete"), taxaFreteInicial, taxaFreteFinal));
+			}
+			if (ativo != null) {
+				predicates.add(
+						criteriaBuilder.equal(root.get("ativo"), ativo));
+			}
+			if (aberto != null) {
+				predicates.add(
+						criteriaBuilder.equal(root.get("aberto"), aberto));
+			}
+			if (cidade != null) {
+				Join<MarketPlace, Endereço> enderecoJoin = root.join("endereço");
+				Join<Endereço, Cidade> cidadeJoin = enderecoJoin.join("cidade");
+				predicates.add(criteriaBuilder.like(cidadeJoin.get("nome"), "%" + cidade + "%"));
+			}
+			if (estado != null) {
+				Join<MarketPlace, Endereço> enderecoJoin = root.join("endereço");
+				Join<Endereço, Cidade> cidadeJoin = enderecoJoin.join("cidade");
+				Join<Cidade, Estado> estadoJoin = cidadeJoin.join("estado");
+				predicates.add(criteriaBuilder.like(estadoJoin.get("nome"), "%" + estado + "%"));
+			}
+			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+		};
+		return marketplaceRepository.findAll(spec);
 	}
 
 	@GetMapping("/{marketplaceId}") // -> /marketplace/marketplaceId
@@ -97,117 +163,6 @@ public class MarketPlaceControler {
 			return pedidos;
 		}
 		return null;
-	}
-
-	// -> /marketplace/por-nome?nome=nome_buscado
-	@GetMapping("/por-nome")
-	public List<MarketPlace> MarketPlacesPorNome(String nome) {
-		return marketplaceRepository.findAllByNomeContains(nome);
-	}
-
-	// -> /marketplace/por-classificacao?classificacao=classificacao_buscado
-	@GetMapping("/por-classificacao")
-	public List<MarketPlace> MarketPlacesPorClassificacao(String classificacao) {
-		return marketplaceRepository.findAllByClassificacaoContains(classificacao);
-	}
-
-	////////////////////
-	// ->
-	//////////////////// /marketplaces/entre-taxas-frete?taxaInicial=taxaInicial&taxaFinal=taxaFinal
-	@GetMapping("/entre-taxas-frete")
-	public List<MarketPlace> MarketPlacesEntreTaxasFrete(BigDecimal taxaInicial, BigDecimal taxaFinal) {
-		return marketplaceRepository.findAllByTaxaFreteBetween(taxaInicial, taxaFinal);
-	}
-
-	// -> /marketplaces/com-taxa-frete-maior?taxa=taxa
-	@GetMapping("/com-taxa-frete-maior")
-	public List<MarketPlace> MarketPlacesComTaxaFreteMaior(BigDecimal taxa) {
-		return marketplaceRepository.findAllByTaxaFreteGreaterThanEqual(taxa);
-	}
-
-	// -> /marketplaces/com-taxa-frete-menor?taxa=taxa
-	@GetMapping("/com-taxa-frete-menor")
-	public List<MarketPlace> MarketPlacesComTaxaFreteMenor(BigDecimal taxa) {
-		return marketplaceRepository.findAllByTaxaFreteLessThanEqual(taxa);
-	}
-
-	////////////////////
-	// -> /marketplace/por-ativo?ativo=ativo_buscado
-	@GetMapping("/por-ativo")
-	public List<MarketPlace> MarketPlacePorAtivo(boolean ativo) {
-		return marketplaceRepository.findAllByAtivo(ativo);
-	}
-
-	// -> /marketplace/por-aberto?aberto=aberto_buscado
-	@GetMapping("/por-aberto")
-	public List<MarketPlace> MarketPlacePorAberto(boolean aberto) {
-		return marketplaceRepository.findAllByAberto(aberto);
-	}
-
-	////////////////////
-	// ->
-	//////////////////// /pedidos/entre-datas-de-cadastro?dataInicial=MM/DD/AAAA&dataFinal=MM/DD/AAAA
-	@GetMapping("/entre-datas-de-cadastro")
-	public List<MarketPlace> MarketPlaceEntreDatasCadastro(Date dataInicial, Date dataFinal) {
-		return marketplaceRepository.findAllByDataCadastroBetween(dataInicial, dataFinal);
-	}
-
-	// -> /pedidos/com-data-de-cadastro-maior?data=MM/DD/AAAA
-	@GetMapping("/com-data-de-cadastro-maior")
-	public List<MarketPlace> MarketPlaceComDataCadastroMaior(Date data) {
-		return marketplaceRepository.findAllByDataCadastroGreaterThanEqual(data);
-	}
-
-	// -> /pedidos/com-data-de-cadastro-menor?data=MM/DD/AAAA
-	@GetMapping("/com-data-de-cadastro-menor")
-	public List<MarketPlace> MarketPlaceComDataCadastroMenor(Date data) {
-		return marketplaceRepository.findAllByDataCadastroLessThanEqual(data);
-	}
-
-	////////////////////
-	// ->
-	//////////////////// /pedidos/entre-datas-de-ataulizacao?dataInicial=MM/DD/AAAA&dataFinal=MM/DD/AAAA
-	@GetMapping("/entre-datas-de-ataulizacao")
-	public List<MarketPlace> MarketPlaceEntreDatasAtaulizacao(Date dataInicial, Date dataFinal) {
-		return marketplaceRepository.findAllByDataAtualizacaoBetween(dataInicial, dataFinal);
-	}
-
-	// -> /pedidos/com-data-de-ataulizacao-maior?data=MM/DD/AAAA
-	@GetMapping("/com-data-de-ataulizacao-maior")
-	public List<MarketPlace> MarketPlaceComDataAtaulizacaoMaior(Date data) {
-		return marketplaceRepository.findAllByDataAtualizacaoGreaterThanEqual(data);
-	}
-
-	// -> /pedidos/com-data-de-ataulizacao-menor?data=MM/DD/AAAA
-	@GetMapping("/com-data-de-ataulizacao-menor")
-	public List<MarketPlace> MarketPlaceComDataAtaulizacaoMenor(Date data) {
-		return marketplaceRepository.findAllByDataAtualizacaoLessThanEqual(data);
-	}
-	////////////////////
-
-	// -> /marketplace/por-formasDePagamento-id?id=id
-	@GetMapping("/por-formasDePagamento-id")
-	public List<MarketPlace> MarketPlacePorFormasDePagamentoId(Long id) {
-		return marketplaceRepository.findAllByFormasDePagamentoId(id);
-	}
-
-	// -> /marketplace/por-formasDePagamento-descricao?descricao=descricao
-	@GetMapping("/por-formasDePagamento-descricao")
-	public List<MarketPlace> MarketPlacePorFormasDePagamentoDescricao(String descricao) {
-		return marketplaceRepository.findAllByFormasDePagamentoDescricaoContains(descricao);
-	}
-	////////////////////
-
-	// -> /marketplace/por-cidade?cidade=cidade
-	@GetMapping("/por-cidade")
-	public List<MarketPlace> MarketPlacePorCidade(String cidade) {
-		return marketplaceRepository.findAllByEndereçoCidadeNomeContains(cidade);
-	}
-
-	// -> /marketplace/por-estado?estado=estado
-	@GetMapping("/por-estado")
-	public List<MarketPlace> MarketPlacePorEstado(String estado) {
-		return marketplaceRepository.findAllByEndereçoCidadeEstadoNomeContains(estado);
 	}
 
 	// Comando POST

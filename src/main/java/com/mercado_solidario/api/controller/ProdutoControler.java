@@ -62,15 +62,15 @@ public class ProdutoControler {
 			}
 			if (maiorPreco != null && menorPreco == null) {
 				predicates.add(
-						criteriaBuilder.greaterThan(root.get("preco"), maiorPreco));
-			}
-			if (menorPreco != null && maiorPreco == null) {
+						criteriaBuilder.lessThan(root.get("preco"), maiorPreco));
+			} else if (menorPreco != null && maiorPreco == null) {
 				predicates.add(
-						criteriaBuilder.lessThan(root.get("preco"), menorPreco));
-			}
-			if (menorPreco != null && maiorPreco != null) {
+						criteriaBuilder.greaterThan(root.get("preco"), menorPreco));
+			} else if (menorPreco != null && maiorPreco != null) {
 				predicates.add(
 						criteriaBuilder.between(root.get("preco"), menorPreco, maiorPreco));
+			} else {
+				predicates.add(criteriaBuilder.conjunction());
 			}
 			if (disponivel != null) {
 				predicates.add(

@@ -14,7 +14,6 @@ import java.util.Set;
 
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
-import javax.swing.GroupLayout.Group;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,7 +76,7 @@ public class UsuarioControler {
 			}
 			if (email != null) {
 				predicates.add(
-						criteriaBuilder.equal(root.get("nome"), "%" + nome + "%"));
+						criteriaBuilder.equal(root.get("email"), "%" + email + "%"));
 			}
 			if (cidade != null) {
 				Join<Usuario, Endereço> enderecoJoin = root.join("endereço");
@@ -100,8 +99,6 @@ public class UsuarioControler {
 			} else if (dataFim != null) {
 				Date end = Date.from(dataFim.atZone(ZoneId.systemDefault()).toInstant());
 				predicates.add(criteriaBuilder.lessThanOrEqualTo(root.<Date>get("dataCadastro"), end));
-			} else {
-				predicates.add(criteriaBuilder.conjunction()); // if no dates are provided, return all
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
