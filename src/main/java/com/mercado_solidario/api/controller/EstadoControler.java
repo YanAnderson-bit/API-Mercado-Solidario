@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Predicate;
 
@@ -12,6 +13,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -33,6 +37,9 @@ import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.EstadoRepository;
 import com.mercado_solidario.api.service.EstadoServices;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping(value = "/estados")
 public class EstadoControler {
@@ -45,7 +52,7 @@ public class EstadoControler {
 
 	// Comando GET
 	@GetMapping
-	public List<Estado> listar(
+	public CollectionModel<EntityModel<Estado>> listar(
 			@RequestParam(required = false) String nome,
 			@RequestParam(required = false) String sigla) {
 		Specification<Estado> spec = (root, query, criteriaBuilder) -> {
@@ -60,73 +67,51 @@ public class EstadoControler {
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
-		return estadoRepository.findAll(spec);
+		List<EntityModel<Estado>> estados = estadoRepository.findAll(spec).stream()
+				.map(estado -> EntityModel.of(estado,
+						linkTo(methodOn(EstadoControler.class).buscar(estado.getId())).withSelfRel(),
+						linkTo(methodOn(EstadoControler.class).listar(nome, sigla)).withRel("estados")))
+				.collect(Collectors.toList());
+
+		return CollectionModel.of(estados, linkTo(methodOn(EstadoControler.class).listar(nome, sigla)).withSelfRel());
 	}
 
 	@GetMapping("/{estadoId}")
-	public ResponseEntity<Estado> buscar(@PathVariable("estadoId") Long Id) {
-		Optional<Estado> estado = estadoRepository.findById(Id);
-
-		if (estado.isPresent()) {
-			return ResponseEntity.ok(estado.get());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<Estado>> buscar(@PathVariable("estadoId") Long Id) {
+		return estadoRepository.findById(Id)
+				.map(estado -> EntityModel.of(estado,
+						linkTo(methodOn(EstadoControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(EstadoControler.class).listar(null, null)).withRel("estados")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando POST
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Estado adicionar(@RequestBody Estado estado) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome":"nome",
-		 * "sigla": "sigla"
-		 * }
-		 */
-		return estadoServices.salvar(estado);
-	}
-
-	// Comandos PUT
-	@PutMapping("/{estadoId}")
-	public ResponseEntity<?> atualizar(@PathVariable("estadoId") Long Id, @RequestBody Estado estado) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome":"nome",
-		 * "sigla": "sigla"
-		 * }
-		 */
-		try {
-			Optional<Estado> estadoAtual = estadoRepository.findById(Id);
-
-			if (estadoAtual.isPresent()) {
-				BeanUtils.copyProperties(estado, estadoAtual.get(), "id");
-				Estado estadoSalvo = estadoServices.salvar(estadoAtual.get());
-
-				return ResponseEntity.ok(estadoSalvo);
-			}
-
-			return ResponseEntity.notFound().build();
-		} catch (EntidadeNaoEncontradaExeption e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		}
-
+	public ResponseEntity<EntityModel<Estado>> adicionar(@RequestBody Estado estado) {
+		Estado savedEstado = estadoServices.salvar(estado);
+		return ResponseEntity.created(linkTo(methodOn(EstadoControler.class).buscar(savedEstado.getId())).toUri())
+				.body(EntityModel.of(savedEstado,
+						linkTo(methodOn(EstadoControler.class).buscar(savedEstado.getId())).withSelfRel(),
+						linkTo(methodOn(EstadoControler.class).listar(null, null)).withRel("estados")));
 	}
 
 	// Comando PATCH
 	@PatchMapping("/{estadoId}")
-	public ResponseEntity<?> atualizaParcial(@PathVariable("estadoId") Long Id,
+	public ResponseEntity<EntityModel<Estado>> atualizaParcial(@PathVariable("estadoId") Long Id,
 			@RequestBody Map<String, Object> campos) {
-		Optional<Estado> estado = estadoRepository.findById(Id);
+		return estadoRepository.findById(Id)
+				.map(estado -> {
+					merge(campos, estado); // Merge the changes into the existing entity
+					Estado updatedEstado = estadoServices.salvar(estado); // Save the updated entity
 
-		if (estado.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		merge(campos, estado.get());
-		return atualizar(Id, estado.get());
+					// Return the updated entity wrapped in an EntityModel with HATEOAS links
+					return ResponseEntity.ok(EntityModel.of(updatedEstado,
+							linkTo(methodOn(EstadoControler.class).buscar(updatedEstado.getId())).withSelfRel(),
+							linkTo(methodOn(EstadoControler.class).listar(null, null)).withRel("estados")));
+				})
+				.orElse(ResponseEntity.notFound().build()); // Return not found if the entity does not exist
 	}
 
 	private void merge(Map<String, Object> camposOrigem, Estado estadoDestino) {
@@ -144,17 +129,19 @@ public class EstadoControler {
 
 	// Comandos DELET
 	@DeleteMapping("/{estadoId}")
-	public ResponseEntity<Estado> remover(@PathVariable("estadoId") Long Id) {// -> /estados/estadoId
+	public ResponseEntity<?> remover(@PathVariable("estadoId") Long Id) {
 		try {
-
 			estadoServices.excluir(Id);
-			return ResponseEntity.noContent().build();
-
+			return ResponseEntity.noContent()
+					.header("Location", linkTo(methodOn(EstadoControler.class).listar(null, null)).toUri().toString())
+					.build();
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.notFound().build();
 		} catch (DataIntegrityViolationException e) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body(EntityModel.of(null,
+							linkTo(methodOn(EstadoControler.class).buscar(Id)).withRel(IanaLinkRelations.SELF),
+							linkTo(methodOn(EstadoControler.class).listar(null, null)).withRel("estados")));
 		}
-
 	}
 }
