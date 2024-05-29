@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Predicate;
 
@@ -12,6 +13,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -23,7 +27,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,6 +35,9 @@ import com.mercado_solidario.api.entity.FormasDePagamento;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.FormasDePagamentoRepository;
 import com.mercado_solidario.api.service.FormasDePagamentoServices;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping(value = "/formasDePagamento")
@@ -45,26 +51,39 @@ public class FormasDePagamentoControler {
 
 	// Comando GET
 	@GetMapping
-	public List<FormasDePagamento> listar() {
-		return formasDePagamentoRepository.findAll();
-	};
+	public CollectionModel<EntityModel<FormasDePagamento>> listar() {
+		List<EntityModel<FormasDePagamento>> formasDePagamento = formasDePagamentoRepository.findAll().stream()
+				.map(forma -> EntityModel.of(forma,
+						linkTo(methodOn(FormasDePagamentoControler.class).buscar(forma.getId())).withSelfRel(),
+						linkTo(methodOn(FormasDePagamentoControler.class).listar()).withRel("formasDePagamento")))
+				.collect(Collectors.toList());
+
+		return CollectionModel.of(formasDePagamento,
+				linkTo(methodOn(FormasDePagamentoControler.class).listar()).withSelfRel());
+	}
 
 	@GetMapping("/{formasDePagamentoId}") // -> /formasDePagamento/formasDePagamentoId
-	public ResponseEntity<FormasDePagamento> buscar(@PathVariable("formasDePagamentoId") Long Id) {
-		Optional<FormasDePagamento> formasDePagamento = formasDePagamentoRepository.findById(Id);
-
-		if (formasDePagamento.isPresent()) {
-			return ResponseEntity.ok(formasDePagamento.get());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<FormasDePagamento>> buscar(@PathVariable("formasDePagamentoId") Long Id) {
+		return formasDePagamentoRepository.findById(Id)
+				.map(formasDePagamento -> EntityModel.of(formasDePagamento,
+						linkTo(methodOn(FormasDePagamentoControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(FormasDePagamentoControler.class).listar()).withRel("formasDePagamento")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando POST
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public FormasDePagamento adicionar(@RequestBody FormasDePagamento formasDePagamento) {
-		return formasDePagamentoServices.salvar(formasDePagamento);
+	public ResponseEntity<EntityModel<FormasDePagamento>> adicionar(@RequestBody FormasDePagamento formasDePagamento) {
+		FormasDePagamento savedFormasDePagamento = formasDePagamentoServices.salvar(formasDePagamento);
+		return ResponseEntity
+				.created(linkTo(methodOn(FormasDePagamentoControler.class).buscar(savedFormasDePagamento.getId()))
+						.toUri())
+				.body(EntityModel.of(savedFormasDePagamento,
+						linkTo(methodOn(FormasDePagamentoControler.class).buscar(savedFormasDePagamento.getId()))
+								.withSelfRel(),
+						linkTo(methodOn(FormasDePagamentoControler.class).listar()).withRel("formasDePagamento")));
 	}
 
 	// Comandos PUT
@@ -72,35 +91,38 @@ public class FormasDePagamentoControler {
 	public ResponseEntity<?> atualizar(@PathVariable("formasDePagamentoId") Long Id,
 			@RequestBody FormasDePagamento formasDePagamento) {
 		try {
-			Optional<FormasDePagamento> formasDePagamentoAtual = formasDePagamentoRepository.findById(Id);
-
-			if (formasDePagamentoAtual.isPresent()) {
-				BeanUtils.copyProperties(formasDePagamento, formasDePagamentoAtual.get(), "id");
-				FormasDePagamento formasDePagamentoSalvo = formasDePagamentoServices
-						.salvar(formasDePagamentoAtual.get());
-
-				return ResponseEntity.ok(formasDePagamentoSalvo);
-			}
-
-			return ResponseEntity.notFound().build();
+			return formasDePagamentoRepository.findById(Id)
+					.map(formasDePagamentoAtual -> {
+						BeanUtils.copyProperties(formasDePagamento, formasDePagamentoAtual, "id");
+						FormasDePagamento updatedFormasDePagamento = formasDePagamentoServices
+								.salvar(formasDePagamentoAtual);
+						return ResponseEntity.ok(EntityModel.of(updatedFormasDePagamento,
+								linkTo(methodOn(FormasDePagamentoControler.class)
+										.buscar(updatedFormasDePagamento.getId())).withSelfRel(),
+								linkTo(methodOn(FormasDePagamentoControler.class).listar())
+										.withRel("formasDePagamento")));
+					})
+					.orElseGet(() -> ResponseEntity.notFound().build());
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
-
 	}
 
 	// Comando PATCH
 	@PatchMapping("/{formasDePagamentoId}")
 	public ResponseEntity<?> atualizaParcial(@PathVariable("formasDePagamentoId") Long Id,
 			@RequestBody Map<String, Object> campos) {
-		Optional<FormasDePagamento> marketPlace = formasDePagamentoRepository.findById(Id);
-
-		if (marketPlace.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		merge(campos, marketPlace.get());
-		return atualizar(Id, marketPlace.get());
+		return formasDePagamentoRepository.findById(Id)
+				.map(formasDePagamento -> {
+					merge(campos, formasDePagamento); // Apply changes to the existing entity
+					FormasDePagamento updatedFormasDePagamento = formasDePagamentoServices.salvar(formasDePagamento); // Save
+																														// the
+					return ResponseEntity.ok(EntityModel.of(updatedFormasDePagamento,
+							linkTo(methodOn(FormasDePagamentoControler.class).buscar(updatedFormasDePagamento.getId()))
+									.withSelfRel(),
+							linkTo(methodOn(FormasDePagamentoControler.class).listar()).withRel("formasDePagamento")));
+				})
+				.orElse(ResponseEntity.notFound().build()); // Return not found if the entity does not exist
 	}
 
 	private void merge(Map<String, Object> camposOrigem, FormasDePagamento formasDePagamentoDestino) {
@@ -118,17 +140,21 @@ public class FormasDePagamentoControler {
 
 	// Comandos DELET
 	@DeleteMapping("/{formasDePagamentoId}")
-	public ResponseEntity<FormasDePagamento> remover(@PathVariable("formasDePagamentoId") Long Id) {
+	public ResponseEntity<?> remover(@PathVariable("formasDePagamentoId") Long Id) {
 		try {
-
 			formasDePagamentoServices.excluir(Id);
-			return ResponseEntity.noContent().build();
-
+			return ResponseEntity.noContent()
+					.header("Location", linkTo(methodOn(FormasDePagamentoControler.class).listar()).toUri().toString())
+					.build();
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.notFound().build();
 		} catch (DataIntegrityViolationException e) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body(EntityModel.of(null,
+							linkTo(methodOn(FormasDePagamentoControler.class).buscar(Id))
+									.withRel(IanaLinkRelations.SELF),
+							linkTo(methodOn(FormasDePagamentoControler.class).listar()).withRel("formasDePagamento")));
 		}
-
 	}
+
 }
