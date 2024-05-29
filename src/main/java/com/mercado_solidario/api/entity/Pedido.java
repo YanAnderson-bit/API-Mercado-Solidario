@@ -53,10 +53,10 @@ public class Pedido {
 	private Date dataCriacao;
 
 	@Column(nullable = true)
-	private Date dataConfirmação;
+	private Date dataConfirmacao;
 
 	@Column(nullable = true)
-	private Date dataCançelamento;
+	private Date dataCancelamento;
 
 	@Column(nullable = true)
 	private Date dataEntrega;
@@ -117,7 +117,7 @@ public class Pedido {
 	}
 
 	public void confirmar() {
-		this.setDataConfirmação(Date.from(Instant.now()));
+		this.setDataConfirmacao(Date.from(Instant.now()));
 		this.setStatus("CONFIRMED");
 	}
 
@@ -127,7 +127,7 @@ public class Pedido {
 	}
 
 	public void cancelar() {
-		this.setDataCançelamento(Date.from(Instant.now()));
+		this.setDataCancelamento(Date.from(Instant.now()));
 		this.setStatus("CANCELED");
 	}
 

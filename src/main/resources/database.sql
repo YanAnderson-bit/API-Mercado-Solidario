@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS `usuario` (
 CREATE TABLE IF NOT EXISTS `pedido` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `codigo` varchar(255) NOT NULL,
-  `data_cançelamento` datetime(6) DEFAULT NULL,
-  `data_confirmação` datetime(6) DEFAULT NULL,
+  `data_cancelamento` datetime(6) DEFAULT NULL,
+  `data_confirmacao` datetime(6) DEFAULT NULL,
   `data_criacao` datetime(6) NOT NULL,
   `data_entrega` datetime(6) DEFAULT NULL,
   `endereco_bairro` varchar(255) NOT NULL,
