@@ -6,20 +6,20 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,12 +38,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercado_solidario.api.entity.Cidade;
 import com.mercado_solidario.api.entity.Endereço;
 import com.mercado_solidario.api.entity.Estado;
-import com.mercado_solidario.api.entity.Grupo;
 import com.mercado_solidario.api.entity.Usuario;
 import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.GrupoRepository;
 import com.mercado_solidario.api.repository.UsuarioRepository;
 import com.mercado_solidario.api.service.UsuarioServices;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping(value = "/usuarios")
@@ -63,7 +64,7 @@ public class UsuarioControler {
 	// private PasswordEncoder passwordEncoder;
 
 	@GetMapping
-	public List<Usuario> listar(@RequestParam(required = false) String nome,
+	public ResponseEntity<CollectionModel<EntityModel<Usuario>>> listar(@RequestParam(required = false) String nome,
 			@RequestParam(required = false) String email, @RequestParam(required = false) String cidade,
 			@RequestParam(required = false) String estado,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
@@ -102,88 +103,63 @@ public class UsuarioControler {
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
-		return usuarioRepository.findAll(spec);
+		List<Usuario> usuarios = usuarioRepository.findAll(spec);
+		List<EntityModel<Usuario>> usuariosModel = usuarios.stream()
+				.map(usuario -> EntityModel.of(usuario,
+						linkTo(methodOn(UsuarioControler.class).buscar(usuario.getId())).withSelfRel(),
+						linkTo(methodOn(UsuarioControler.class).listar(nome, email, cidade, estado, dataInicio,
+								dataFim)).withRel("usuarios")))
+				.collect(Collectors.toList());
+		return ResponseEntity.ok(CollectionModel.of(usuariosModel,
+				linkTo(methodOn(UsuarioControler.class).listar(nome, email, cidade, estado, dataInicio, dataFim))
+						.withSelfRel()));
 	}
 
 	@GetMapping("/{usuarioId}") // -> /usuarios/usuarioId
-	public ResponseEntity<Usuario> buscar(@PathVariable("usuarioId") Long Id) {
-		Optional<Usuario> usuario = usuarioRepository.findById(Id);
-
+	public ResponseEntity<EntityModel<Usuario>> buscar(@PathVariable Long usuarioId) {
+		Optional<Usuario> usuario = usuarioRepository.findById(usuarioId);
 		if (usuario.isPresent()) {
-			return ResponseEntity.ok(usuario.get());
+			EntityModel<Usuario> model = EntityModel.of(usuario.get(),
+					linkTo(methodOn(UsuarioControler.class).buscar(usuarioId)).withSelfRel(),
+					linkTo(methodOn(UsuarioControler.class).listar(null, null, null, null, null, null))
+							.withRel("usuarios"));
+			return ResponseEntity.ok(model);
+		} else {
+			return ResponseEntity.notFound().build();
 		}
-
-		return ResponseEntity.notFound().build();
 	}
 
 	// Comando POST
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Usuario adicionar(@RequestBody Usuario usuario) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome":"nome",
-		 * "email":"mail",
-		 * "senha":"*****",
-		 * "endereço": {
-		 * ...
-		 * }
-		 * }
-		 */
-		// return usuario;
+	public ResponseEntity<EntityModel<Usuario>> adicionar(@RequestBody Usuario usuario) {
 		usuario.setDataCadastro(Date.from(Instant.now()));
-		// usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-
-		Set<Grupo> visitorGrupos = new HashSet<>();
-		Grupo grupo = grupoRepository.findById((long) 1).get();
-		visitorGrupos.add(grupo);
-		usuario.setGrupo(visitorGrupos);
-
-		Endereço endereço = usuario.getEndereço();
-		usuario.setEndereço(endereço);
-
 		usuario.setNew(true);
+		Usuario savedUsuario = usuarioServices.salvar(usuario);
 
-		return usuarioServices.salvar(usuario);
+		return ResponseEntity.created(linkTo(methodOn(UsuarioControler.class).buscar(savedUsuario.getId())).toUri())
+				.body(EntityModel.of(savedUsuario,
+						linkTo(methodOn(UsuarioControler.class).buscar(savedUsuario.getId())).withSelfRel(),
+						linkTo(methodOn(UsuarioControler.class).listar(null, null, null, null, null, null))
+								.withRel("usuarios")));
 	}
-
-	// Comandos PUT
-	@PutMapping("/{usuarioId}")
-	public ResponseEntity<?> atualizar(@PathVariable("usuarioId") Long Id, @RequestBody Usuario usuario) {
-		try {
-			Optional<Usuario> usuarioAtual = usuarioRepository.findById(Id);
-
-			Date cadastro = usuarioAtual.get().getDataCadastro();
-			usuario.setDataCadastro(cadastro);
-
-			if (usuarioAtual.isPresent()) {
-				BeanUtils.copyProperties(usuario, usuarioAtual.get(), "id", "endereço", "senha");
-				Usuario usuarioSalvo = usuarioServices.salvar(usuarioAtual.get());
-
-				return ResponseEntity.ok(usuarioSalvo);
-			}
-
-			return ResponseEntity.notFound().build();
-		} catch (EntidadeNaoEncontradaExeption e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		}
-
-	}
-	//////////////////////////////////
 
 	@PatchMapping("/{usuarioId}")
-	public ResponseEntity<?> atualizaParcial(@PathVariable("usuarioId") Long Id,
+	public ResponseEntity<EntityModel<Usuario>> atualizaParcial(@PathVariable Long usuarioId,
 			@RequestBody Map<String, Object> campos) {
-		Optional<Usuario> usuario = usuarioRepository.findById(Id);
+		Optional<Usuario> usuario = usuarioRepository.findById(usuarioId);
 
 		if (usuario.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
 
 		merge(campos, usuario.get());
+		Usuario updatedUser = usuarioServices.salvar(usuario.get());
 
-		return atualizar(Id, usuario.get());
+		return ResponseEntity.ok(EntityModel.of(updatedUser,
+				linkTo(methodOn(UsuarioControler.class).buscar(updatedUser.getId())).withSelfRel(),
+				linkTo(methodOn(UsuarioControler.class).listar(null, null, null, null, null, null))
+						.withRel("allUsuarios")));
 	}
 
 	@PatchMapping("/{usuarioId}/{grupoId}/{vincular}")
@@ -212,16 +188,16 @@ public class UsuarioControler {
 
 	// Comandos DELET
 	@DeleteMapping("/{usuarioId}")
-	public ResponseEntity<Usuario> remover(@PathVariable("usuarioId") Long Id) {
+	public ResponseEntity<?> remover(@PathVariable Long usuarioId) {
 		try {
-
-			usuarioServices.excluir(Id);
-			return ResponseEntity.noContent().build();
+			usuarioServices.excluir(usuarioId);
+			return ResponseEntity.ok(EntityModel.of(null,
+					linkTo(methodOn(UsuarioControler.class).listar(null, null, null, null, null, null))
+							.withRel("allUsuarios")));
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.notFound().build();
 		} catch (DataIntegrityViolationException e) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).build();
 		}
-
 	}
 }
