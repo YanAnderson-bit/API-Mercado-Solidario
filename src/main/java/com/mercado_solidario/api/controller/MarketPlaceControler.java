@@ -59,7 +59,8 @@ public class MarketPlaceControler {
 	// Comando GET
 	@GetMapping
 	public List<MarketPlace> listar(@RequestParam(required = false) String nome,
-			@RequestParam(required = false) String email, @RequestParam(required = false) String cidade,
+			@RequestParam(required = false) String email,
+			@RequestParam(required = false) String cidade,
 			@RequestParam(required = false) String estado,
 			@RequestParam(required = false) String classificacao,
 			@RequestParam(required = false) Boolean ativo,
