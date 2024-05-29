@@ -26,100 +26,100 @@ import com.mercado_solidario.api.repository.PedidoRepository;
 @Service
 public class MarketPlaceServices {
 
-	@Autowired 
+	@Autowired
 	private MarketPlaceRepository marketplaceRepository;
-	
-	@Autowired 
+
+	@Autowired
 	private FormasDePagamentoRepository formasDePagamentoRepository;
-	
-	@Autowired 
+
+	@Autowired
 	private FornecedorRepository fornecedorRepository;
-	
-	@Autowired 
+
+	@Autowired
 	private PedidoRepository pedidoRepository;
-	
-	@Autowired 
+
+	@Autowired
 	private CidadeRepository cidadeRepository;
-//	@Autowired 
-//	private EndereçoRepository endereçoRepository;
-	
+	// @Autowired
+	// private EndereçoRepository endereçoRepository;
+
 	public MarketPlace salvar(MarketPlace marketplace) {
-		
-		if(marketplace.getId()==null) {
+
+		if (marketplace.getId() == null) {
 			marketplace.setDataCadastro(Date.from(Instant.now()));
 		}
-		
-		marketplace.setDataAtualizacao(Date.from(Instant.now()));
-		
-	/*	Long Id = marketplace.getEndereço().getId();	
-		Endereço endereço = endereçoRepository.findById(Id)
-				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
-						String.format("Não existe cadastro de endereço de código %d", Id)));
-		
-		marketplace.setEndereço(endereço);
-		*/
 
-		Long IdCidade = marketplace.getEndereço().getCidade().getId();	
+		marketplace.setDataAtualizacao(Date.from(Instant.now()));
+
+		/*
+		 * Long Id = marketplace.getEndereço().getId();
+		 * Endereço endereço = endereçoRepository.findById(Id)
+		 * .orElseThrow(() -> new EntidadeNaoEncontradaExeption(
+		 * String.format("Não existe cadastro de endereço de código %d", Id)));
+		 * 
+		 * marketplace.setEndereço(endereço);
+		 */
+
+		Long IdCidade = marketplace.getEndereço().getCidade().getId();
 		Cidade cidade = cidadeRepository.findById(IdCidade)
 				.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 						String.format("Não existe cadastro de cidade de código %d", IdCidade)));
-		
+
 		marketplace.getEndereço().setCidade(cidade);
-		
-		
+
 		List<Long> idsFormasPagamento = new ArrayList<>();
 		marketplace.getFormasDePagamento().forEach(f -> idsFormasPagamento.add(f.getId()));
-		
+
 		List<FormasDePagamento> formasDePagamentos = new ArrayList<>();
-		for(Long id: idsFormasPagamento) {
+		for (Long id : idsFormasPagamento) {
 			FormasDePagamento formasDePagamento = formasDePagamentoRepository.findById(id)
 					.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 							String.format("Não existe cadastro de forma de pagamento de código %d", id)));
 			formasDePagamentos.add(formasDePagamento);
 		}
-		
+
 		List<Long> idsFornecedores = new ArrayList<>();
 		marketplace.getFormasDePagamento().forEach(f -> idsFornecedores.add(f.getId()));
-		
+
 		List<Fornecedor> fornecedores = new ArrayList<>();
-		for(Long id: idsFornecedores) {
+		for (Long id : idsFornecedores) {
 			Fornecedor fornecedor = fornecedorRepository.findById(id)
 					.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 							String.format("Não existe cadastro de fornecedor de código %d", id)));
 			fornecedores.add(fornecedor);
 		}
-		
+
 		List<Long> idsPedidos = new ArrayList<>();
 		marketplace.getPedidos().forEach(f -> idsPedidos.add(f.getId()));
-		
+
 		List<Pedido> pedidos = new ArrayList<>();
-		for(Long id: idsPedidos) {
+		for (Long id : idsPedidos) {
 			Pedido pedido = pedidoRepository.findById(id)
 					.orElseThrow(() -> new EntidadeNaoEncontradaExeption(
 							String.format("Não existe cadastro de pedido de código %d", id)));
 			pedidos.add(pedido);
 		}
-		
-		marketplace.setFornecedors(fornecedores);
-		
+
+		marketplace.setFornecedores(fornecedores);
+
 		marketplace.setFormasDePagamento(formasDePagamentos);
-		
+
 		marketplace.setPedidos(pedidos);
 
 		return marketplaceRepository.save(marketplace);
 	}
-	
-	public void excluir(Long Id){ 
+
+	public void excluir(Long Id) {
 		try {
 			MarketPlace marketPlaceAntigo = marketplaceRepository.findById(Id).get();
 			marketplaceRepository.deleteById(Id);
-			
-			List<Fornecedor> fornecedores = marketPlaceAntigo.getFornecedors();
+
+			List<Fornecedor> fornecedores = marketPlaceAntigo.getFornecedores();
 			fornecedores.forEach(fornecedor -> fornecedorRepository.delete(fornecedor));
-			
+
 			List<Pedido> pedidos = marketPlaceAntigo.getPedidos();
 			pedidos.forEach(pedido -> pedidoRepository.delete(pedido));
-			
+
 		} catch (EmptyResultDataAccessException e) {
 			throw new EntidadeNaoEncontradaExeption(
 					String.format("Não existe cadastro da marketplace de código %d", Id));
