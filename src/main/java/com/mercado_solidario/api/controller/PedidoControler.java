@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Predicate;
 
@@ -14,6 +15,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -37,6 +40,9 @@ import com.mercado_solidario.api.repository.PedidoProdutoRepository;
 import com.mercado_solidario.api.repository.PedidoRepository;
 import com.mercado_solidario.api.service.PedidoServices;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping(value = "/pedidos")
 public class PedidoControler {
@@ -52,7 +58,7 @@ public class PedidoControler {
 
 	// Comando GET
 	@GetMapping
-	public List<Pedido> listar(@RequestParam(required = false) String codigo,
+	public CollectionModel<EntityModel<Pedido>> listar(@RequestParam(required = false) String codigo,
 			@RequestParam(required = false) String status,
 			@RequestParam(required = false) BigDecimal taxaFreteInicial,
 			@RequestParam(required = false) BigDecimal taxaFreteFinal,
@@ -90,57 +96,77 @@ public class PedidoControler {
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
-		return pedidoRepository.findAll(spec);
+		List<EntityModel<Pedido>> pedidos = pedidoRepository.findAll(spec).stream()
+				.map(pedido -> EntityModel.of(pedido,
+						linkTo(methodOn(PedidoControler.class).buscar(pedido.getId())).withSelfRel(),
+						linkTo(methodOn(PedidoControler.class).listar(codigo, status, taxaFreteInicial, taxaFreteFinal,
+								valorInicial, valorFinal)).withRel("pedidos")))
+				.collect(Collectors.toList());
+		return CollectionModel.of(pedidos, linkTo(methodOn(PedidoControler.class).listar(codigo, status,
+				taxaFreteInicial, taxaFreteFinal, valorInicial, valorFinal)).withSelfRel());
 	}
 
 	@GetMapping("/{pedidoId}") // -> /pedidos/pedidoId
-	public ResponseEntity<Pedido> buscar(@PathVariable("pedidoId") Long Id) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isPresent()) {
-			return ResponseEntity.ok(pedido.get());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<Pedido>> buscar(@PathVariable("pedidoId") Long Id) {
+		return pedidoRepository.findById(Id)
+				.map(pedido -> EntityModel.of(pedido,
+						linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+								.withRel("pedidos"),
+						linkTo(methodOn(PedidoControler.class).pordutosPorPedido(Id)).withRel("produtos"),
+						linkTo(methodOn(PedidoControler.class).confirmar(Id)).withRel("confirmar"),
+						linkTo(methodOn(PedidoControler.class).entregue(Id)).withRel("entregue"),
+						linkTo(methodOn(PedidoControler.class).cancelar(Id)).withRel("cancelar")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
-	@GetMapping("/{pedidoId}/produtos") // -> /pedidos/pedidoId /produtos
-	public ResponseEntity<List<PedidoProduto>> pordutosPorPedido(@PathVariable("pedidoId") Long Id) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isPresent()) {
-			return ResponseEntity.ok(pedido.get().getPedidoProdutos());
-		}
-
-		return ResponseEntity.notFound().build();
+	@GetMapping("/{pedidoId}/produtos")
+	public ResponseEntity<CollectionModel<EntityModel<PedidoProduto>>> pordutosPorPedido(
+			@PathVariable("pedidoId") Long Id) {
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					List<EntityModel<PedidoProduto>> produtos = pedido.getPedidoProdutos().stream()
+							.map(pedidoProduto -> EntityModel.of(pedidoProduto,
+									linkTo(methodOn(PedidoControler.class).buscar(Id)).withRel("pedido"),
+									linkTo(methodOn(PedidoControler.class).pordutosPorPedido(Id)).withSelfRel()))
+							.collect(Collectors.toList());
+					return ResponseEntity.ok(CollectionModel.of(produtos));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando POST
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Pedido adicionar(@RequestBody Pedido pedido) {
-		/*
-		 * Modelo:
-		 * {
-		 * "codigo":"codigo",
-		 * "taxaFrete":taxaFrete,
-		 * "dataEntrega":"AAAA-MM-DD",
-		 * "usuario":{
-		 * "id":id
-		 * },
-		 * "endereço":{
-		 * "id":id
-		 * }
-		 * "pedidoProdutos":[{
-		 * "quantidade": quantidade,
-		 * "observacao": observacao,
-		 * "produto":{
-		 * "id":id
-		 * }
-		 * }]
-		 * }
-		 */
-		return pedidoServices.salvar(pedido);
+	/*
+	 * Modelo:
+	 * {
+	 * "codigo":"codigo",
+	 * "taxaFrete":taxaFrete,
+	 * "dataEntrega":"AAAA-MM-DD",
+	 * "usuario":{
+	 * "id":id
+	 * },
+	 * "endereço":{
+	 * "id":id
+	 * }
+	 * "pedidoProdutos":[{
+	 * "quantidade": quantidade,
+	 * "observacao": observacao,
+	 * "produto":{
+	 * "id":id
+	 * }
+	 * }]
+	 * }
+	 */
+	public ResponseEntity<EntityModel<Pedido>> adicionar(@RequestBody Pedido pedido) {
+		Pedido savedPedido = pedidoServices.salvar(pedido);
+		return ResponseEntity.created(linkTo(methodOn(PedidoControler.class).buscar(savedPedido.getId())).toUri())
+				.body(EntityModel.of(savedPedido,
+						linkTo(methodOn(PedidoControler.class).buscar(savedPedido.getId())).withSelfRel(),
+						linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+								.withRel("pedidos")));
 	}
 
 	// Comandos PUT
@@ -148,37 +174,34 @@ public class PedidoControler {
 	public ResponseEntity<?> atualizar(@PathVariable("pedidoId") Long Id, @RequestBody Pedido pedido) {
 		try {
 			Optional<Pedido> pedidoAtual = pedidoRepository.findById(Id);
-
 			if (pedidoAtual.isPresent()) {
-				if (pedidoAtual.get().getStatus() == "CREATED")
-					pedido.criacao(pedidoAtual.get());
-
-				BeanUtils.copyProperties(pedido, pedidoAtual.get(), "id", "endereço");
-				Pedido pedidoSalvo = pedidoServices.salvar(pedidoAtual.get());
-
-				return ResponseEntity.ok(pedidoSalvo);
+				BeanUtils.copyProperties(pedido, pedidoAtual.get(), "id");
+				Pedido updatedPedido = pedidoServices.salvar(pedidoAtual.get());
+				return ResponseEntity.ok(EntityModel.of(updatedPedido,
+						linkTo(methodOn(PedidoControler.class).buscar(updatedPedido.getId())).withSelfRel(),
+						linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+								.withRel("pedidos")));
 			}
-
 			return ResponseEntity.notFound().build();
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
-
 	}
 
 	// Comando PATCH
 	@PatchMapping("/{pedidoId}")
 	public ResponseEntity<?> atualizaParcial(@PathVariable("pedidoId") Long Id,
 			@RequestBody Map<String, Object> campos) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		merge(campos, pedido.get());
-
-		return atualizar(Id, pedido.get());
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					merge(campos, pedido);
+					Pedido updatedPedido = pedidoServices.salvar(pedido);
+					return ResponseEntity.ok(EntityModel.of(updatedPedido,
+							linkTo(methodOn(PedidoControler.class).buscar(updatedPedido.getId())).withSelfRel(),
+							linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+									.withRel("pedidos")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	private void merge(Map<String, Object> camposOrigem, Pedido pedidoDestino) {
@@ -196,169 +219,163 @@ public class PedidoControler {
 
 	@PatchMapping("/confirmar/{pedidoId}")
 	public ResponseEntity<?> confirmar(@PathVariable("pedidoId") Long Id) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		pedido.get().confirmar();
-
-		return atualizar(Id, pedido.get());
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					pedido.confirmar();
+					Pedido updatedPedido = pedidoServices.salvar(pedido);
+					return ResponseEntity.ok(EntityModel.of(updatedPedido,
+							linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+									.withRel("pedidos"),
+							linkTo(methodOn(PedidoControler.class).entregue(Id)).withRel("entregue"),
+							linkTo(methodOn(PedidoControler.class).cancelar(Id)).withRel("cancelar")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/entregue/{pedidoId}")
 	public ResponseEntity<?> entregue(@PathVariable("pedidoId") Long Id) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		pedido.get().entregue();
-
-		return atualizar(Id, pedido.get());
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					pedido.entregue();
+					Pedido updatedPedido = pedidoServices.salvar(pedido);
+					return ResponseEntity.ok(EntityModel.of(updatedPedido,
+							linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+									.withRel("pedidos")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/cancelar/{pedidoId}")
 	public ResponseEntity<?> cancelar(@PathVariable("pedidoId") Long Id) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		pedido.get().cancelar();
-
-		return atualizar(Id, pedido.get());
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					pedido.cancelar();
+					Pedido updatedPedido = pedidoServices.salvar(pedido);
+					return ResponseEntity.ok(EntityModel.of(updatedPedido,
+							linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+									.withRel("pedidos")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/adicionar-produto/{pedidoId}")
 	public ResponseEntity<?> adicionarProduto(@PathVariable("pedidoId") Long Id,
 			@RequestBody PedidoProduto pedidoProduto) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		pedido.get().getPedidoProdutos().add(pedidoProduto);
-
-		return atualizar(Id, pedido.get());
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					pedido.getPedidoProdutos().add(pedidoProduto);
+					Pedido updatedPedido = pedidoServices.salvar(pedido);
+					return ResponseEntity.ok(EntityModel.of(updatedPedido,
+							linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+									.withRel("pedidos"),
+							linkTo(methodOn(PedidoControler.class).removerProduto(Id,
+									pedidoProduto.getProduto().getId())).withRel("removerProduto")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
-	@PatchMapping("/remover-produto/{pedidoId}/{produtoIndex}") /// pedidos/removerProduto/{pedidoId}/{produtoIndex}
-	public ResponseEntity<?> removerProduto(@PathVariable("pedidoId") Long Id,
-			@PathVariable("produtoIndex") int produtoIndex) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		List<PedidoProduto> produtosAtuais = pedido.get().getPedidoProdutos();
-
-		PedidoProduto produto = produtosAtuais.get(produtoIndex);
-		produtosAtuais.remove(produtoIndex);
-		pedidoProdutoRepository.delete(produto);
-
-		pedido.get().setPedidoProdutos(produtosAtuais);
-
-		Pedido pedidoSalvo = pedidoServices.salvar(pedido.get());
-
-		return ResponseEntity.ok(pedidoSalvo);
+	@PatchMapping("/remover-produto/{pedidoId}/{produtoId}")
+	public ResponseEntity<?> removerProduto(@PathVariable("pedidoId") Long Id, @PathVariable Long produtoId) {
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					PedidoProduto toRemove = pedido.getPedidoProdutos().stream()
+							.filter(pp -> pp.getProduto().getId().equals(produtoId))
+							.findFirst()
+							.orElse(null);
+					if (toRemove != null) {
+						pedido.getPedidoProdutos().remove(toRemove);
+						pedidoProdutoRepository.delete(toRemove);
+						Pedido updatedPedido = pedidoServices.salvar(pedido);
+						return ResponseEntity.ok(EntityModel.of(updatedPedido,
+								linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+								linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+										.withRel("pedidos")));
+					}
+					return ResponseEntity.notFound().build();
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
-	@PatchMapping("/remover-produto/{pedidoId}") /// pedidos/removerProduto/{pedidoId}?produtoId=produtoId
-	public ResponseEntity<?> removerProduto(@PathVariable("pedidoId") Long Id, Long produtoId) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		List<PedidoProduto> produtosAtuais = pedido.get().getPedidoProdutos();
-		List<PedidoProduto> produtoRemover = new ArrayList<>();
-		for (PedidoProduto produto : pedido.get().getPedidoProdutos()) {
-			if (produto.getProduto().getId().equals(produtoId)) {
-				produtoRemover.add(produto);
-			}
-		}
-		for (PedidoProduto produto : produtoRemover) {
-			produtosAtuais.remove(produto);
-			pedidoProdutoRepository.delete(produto);
-		}
-
-		pedido.get().setPedidoProdutos(produtosAtuais);
-
-		Pedido pedidoSalvo = pedidoServices.salvar(pedido.get());
-
-		return ResponseEntity.ok(pedidoSalvo);
-	}
-
-	@PatchMapping("/remover-produto/{pedidoId}/{nomeProduto}") /// pedidos/removerProduto/{pedidoId}{nomeProduto}
 	public ResponseEntity<?> removerProdutoNome(@PathVariable("pedidoId") Long Id,
 			@PathVariable("nomeProduto") String nome) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		Long removerId = Long.valueOf(-1);
-		for (PedidoProduto produto : pedido.get().getPedidoProdutos()) {
-			if (produto.getProduto().getNome().equalsIgnoreCase(nome))
-				removerId = produto.getProduto().getId();
-		}
-
-		if (removerId >= 0)
-			return removerProduto(Id, removerId);
-		else
-			return ResponseEntity.notFound().build();
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					Optional<PedidoProduto> produtoToRemove = pedido.getPedidoProdutos().stream()
+							.filter(p -> p.getProduto().getNome().equalsIgnoreCase(nome))
+							.findFirst();
+					if (produtoToRemove.isPresent()) {
+						pedido.getPedidoProdutos().remove(produtoToRemove.get());
+						pedidoProdutoRepository.delete(produtoToRemove.get());
+						Pedido updatedPedido = pedidoServices.salvar(pedido);
+						return ResponseEntity.ok(EntityModel.of(updatedPedido,
+								linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+								linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+										.withRel("pedidos")));
+					}
+					return ResponseEntity.notFound().build();
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/aumentar-quantidade/{pedidoId}/{indexProduto}") /// pedidos//aumentar-quantidade/{pedidoId}/{indexProduto}?quantia=quantia
-	public ResponseEntity<?> addQuantidade(@PathVariable("pedidoId") Long Id, @PathVariable("indexProduto") int index,
-			int quantia) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		pedido.get().incrementoDecremento(index, quantia, true);
-
-		return atualizar(Id, pedido.get());
+	public ResponseEntity<?> aumentarQuantidade(@PathVariable("pedidoId") Long Id,
+			@PathVariable("indexProduto") int index, @RequestParam("quantia") int quantia) {
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					if (index >= 0 && index < pedido.getPedidoProdutos().size()) {
+						PedidoProduto produto = pedido.getPedidoProdutos().get(index);
+						produto.setQuantidade(produto.getQuantidade() + quantia);
+						Pedido updatedPedido = pedidoServices.salvar(pedido);
+						return ResponseEntity.ok(EntityModel.of(updatedPedido,
+								linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+								linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+										.withRel("pedidos")));
+					}
+					return ResponseEntity.badRequest().body("Invalid product index.");
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/diminuir-quantidade/{pedidoId}/{indexProduto}") /// pedidos//diminuir-quantidade/{pedidoId}/{indexProduto}?quantia=quantia
-	public ResponseEntity<?> subQuantidade(@PathVariable("pedidoId") Long Id, @PathVariable("indexProduto") int index,
-			int quantia) {
-		Optional<Pedido> pedido = pedidoRepository.findById(Id);
-
-		if (pedido.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		pedido.get().incrementoDecremento(index, quantia, false);
-
-		return atualizar(Id, pedido.get());
+	public ResponseEntity<?> diminuirQuantidade(@PathVariable("pedidoId") Long Id,
+			@PathVariable("indexProduto") int index, @RequestParam("quantia") int quantia) {
+		return pedidoRepository.findById(Id)
+				.map(pedido -> {
+					if (index >= 0 && index < pedido.getPedidoProdutos().size()) {
+						PedidoProduto produto = pedido.getPedidoProdutos().get(index);
+						int newQuantity = Math.max(0, produto.getQuantidade() - quantia); // Prevents quantity from
+																							// going negative
+						produto.setQuantidade(newQuantity);
+						Pedido updatedPedido = pedidoServices.salvar(pedido);
+						return ResponseEntity.ok(EntityModel.of(updatedPedido,
+								linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
+								linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
+										.withRel("pedidos")));
+					}
+					return ResponseEntity.badRequest().body("Invalid product index.");
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comandos DELET
 	@DeleteMapping("/{pedidoId}")
-	public ResponseEntity<Pedido> remover(@PathVariable("pedidoId") Long Id) {
+	public ResponseEntity<?> remover(@PathVariable("pedidoId") Long Id) {
 		try {
-
 			pedidoServices.excluir(Id);
-			return ResponseEntity.noContent().build();
-
+			return ResponseEntity.noContent()
+					.header("Location",
+							linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null)).toUri()
+									.toString())
+					.build();
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.notFound().build();
 		} catch (DataIntegrityViolationException e) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).build();
 		}
-
 	}
 
 }
