@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Predicate;
 import javax.swing.GroupLayout.Group;
@@ -19,6 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -46,6 +50,9 @@ import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.MarketPlaceRepository;
 import com.mercado_solidario.api.service.MarketPlaceServices;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping(value = "/marketplaces")
 public class MarketPlaceControler {
@@ -58,7 +65,7 @@ public class MarketPlaceControler {
 
 	// Comando GET
 	@GetMapping
-	public List<MarketPlace> listar(@RequestParam(required = false) String nome,
+	public CollectionModel<EntityModel<MarketPlace>> listar(@RequestParam(required = false) String nome,
 			@RequestParam(required = false) String email,
 			@RequestParam(required = false) String cidade,
 			@RequestParam(required = false) String estado,
@@ -114,182 +121,205 @@ public class MarketPlaceControler {
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
-		return marketplaceRepository.findAll(spec);
+		List<EntityModel<MarketPlace>> marketplaces = marketplaceRepository.findAll(spec).stream()
+				.map(marketplace -> EntityModel.of(marketplace,
+						linkTo(methodOn(MarketPlaceControler.class).buscar(marketplace.getId())).withSelfRel(),
+						linkTo(methodOn(MarketPlaceControler.class).listar(nome, email, cidade, estado, classificacao,
+								ativo, aberto, taxaFreteInicial, taxaFreteFinal, dataInicio, dataFim))
+								.withRel("marketplaces")))
+				.collect(Collectors.toList());
+		return CollectionModel.of(marketplaces,
+				linkTo(methodOn(MarketPlaceControler.class).listar(nome, email, cidade, estado, classificacao, ativo,
+						aberto, taxaFreteInicial, taxaFreteFinal, dataInicio, dataFim)).withSelfRel());
 	}
 
 	@GetMapping("/{marketplaceId}") // -> /marketplace/marketplaceId
-	public ResponseEntity<MarketPlace> buscar(@PathVariable("marketplaceId") Long Id) {
-		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
-		if (marketplace.isPresent()) {
-			return ResponseEntity.ok(marketplace.get());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<MarketPlace>> buscar(@PathVariable("marketplaceId") Long Id) {
+		return marketplaceRepository.findById(Id)
+				.map(marketplace -> EntityModel.of(marketplace,
+						linkTo(methodOn(MarketPlaceControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(MarketPlaceControler.class).listar(null, null, null, null, null, null, null,
+								null, null, null, null)).withRel("marketplaces"),
+						linkTo(methodOn(MarketPlaceControler.class).FornecedoresPorMarketPlaces(Id))
+								.withRel("fornecedores"),
+						linkTo(methodOn(MarketPlaceControler.class).ProdutosPorMarketPlaces(Id)).withRel("produtos"),
+						linkTo(methodOn(MarketPlaceControler.class).PedidosPorMarketPlaces(Id)).withRel("pedidos")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// -> /marketplace/marketplaceId/fornecedores
 	@GetMapping("/{marketplaceId}/fornecedores")
-	public List<Fornecedor> FornecedoresPorMarketPlaces(@PathVariable("marketplaceId") Long Id) {
+	public ResponseEntity<CollectionModel<EntityModel<Fornecedor>>> FornecedoresPorMarketPlaces(
+			@PathVariable("marketplaceId") Long Id) {
 		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
 		if (marketplace.isPresent()) {
-			List<Fornecedor> fornecedors = marketplace.get().getFornecedores();
-			return fornecedors;
+			List<EntityModel<Fornecedor>> fornecedores = marketplace.get().getFornecedores().stream()
+					.map(fornecedor -> EntityModel.of(fornecedor,
+							linkTo(methodOn(FornecedorControler.class).buscar(fornecedor.getId())).withSelfRel(),
+							linkTo(methodOn(MarketPlaceControler.class).FornecedoresPorMarketPlaces(Id))
+									.withRel("fornecedores")))
+					.collect(Collectors.toList());
+			return ResponseEntity.ok(CollectionModel.of(fornecedores,
+					linkTo(methodOn(MarketPlaceControler.class).FornecedoresPorMarketPlaces(Id)).withSelfRel()));
 		}
-		return null;
+		return ResponseEntity.notFound().build();
 	}
 
 	// -> /marketplace/marketplaceId/produtos
 	@GetMapping("/{marketplaceId}/produtos")
-	public List<List<Produto>> ProdutosPorMarketPlaces(@PathVariable("marketplaceId") Long Id) {
+	public ResponseEntity<CollectionModel<EntityModel<List<EntityModel<Produto>>>>> ProdutosPorMarketPlaces(
+			@PathVariable("marketplaceId") Long Id) {
 		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
 		if (marketplace.isPresent()) {
-			List<Fornecedor> fornecedors = marketplace.get().getFornecedores();
-			List<List<Produto>> listProdutos = new ArrayList<>();
-			fornecedors.forEach(fornecedor -> listProdutos.add(fornecedor.getProdutos()));
-			return listProdutos;
+			List<EntityModel<List<EntityModel<Produto>>>> produtos = marketplace.get().getFornecedores().stream()
+					.map(fornecedor -> EntityModel.of(fornecedor.getProdutos().stream()
+							.map(produto -> EntityModel.of(produto,
+									linkTo(methodOn(ProdutoControler.class).buscar(produto.getId())).withSelfRel()))
+							.collect(Collectors.toList()),
+							linkTo(methodOn(FornecedorControler.class).buscar(fornecedor.getId()))
+									.withRel("fornecedor")))
+					.collect(Collectors.toList());
+			return ResponseEntity.ok(CollectionModel.of(produtos,
+					linkTo(methodOn(MarketPlaceControler.class).ProdutosPorMarketPlaces(Id)).withSelfRel()));
 		}
-		return null;
+		return ResponseEntity.notFound().build();
 	}
 
 	// -> /marketplace/marketplaceId/pedidos
 	@GetMapping("/{marketplaceId}/pedidos")
-	public List<Pedido> PedidosPorMarketPlaces(@PathVariable("marketplaceId") Long Id) {
+	public ResponseEntity<CollectionModel<EntityModel<Pedido>>> PedidosPorMarketPlaces(
+			@PathVariable("marketplaceId") Long Id) {
 		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
 		if (marketplace.isPresent()) {
-			List<Pedido> pedidos = marketplace.get().getPedidos();
-			return pedidos;
+			List<EntityModel<Pedido>> pedidos = marketplace.get().getPedidos().stream()
+					.map(pedido -> EntityModel.of(pedido,
+							linkTo(methodOn(PedidoControler.class).buscar(pedido.getId())).withSelfRel(),
+							linkTo(methodOn(MarketPlaceControler.class).PedidosPorMarketPlaces(Id)).withRel("pedidos")))
+					.collect(Collectors.toList());
+			return ResponseEntity.ok(CollectionModel.of(pedidos,
+					linkTo(methodOn(MarketPlaceControler.class).PedidosPorMarketPlaces(Id)).withSelfRel()));
 		}
-		return null;
+		return ResponseEntity.notFound().build();
 	}
 
 	// Comando POST
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public MarketPlace adicionar(@RequestBody MarketPlace marketplace) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome": nome,
-		 * "classificacao": classificacao,
-		 * "taxaFrete": taxaFrete,
-		 * "ativo": ativo,
-		 * "aberto": aberto,
-		 * "endereço": {
-		 * "id": id,
-		 * },
-		 * "formasDePagamento": [{
-		 * "id": id,
-		 * }]
-		 * }
-		 */
-		return marketplaceServices.salvar(marketplace);
+	/*
+	 * Modelo:
+	 * {
+	 * "nome": nome,
+	 * "classificacao": classificacao,
+	 * "taxaFrete": taxaFrete,
+	 * "ativo": ativo,
+	 * "aberto": aberto,
+	 * "endereço": {
+	 * "id": id,
+	 * },
+	 * "formasDePagamento": [{
+	 * "id": id,
+	 * }]
+	 * }
+	 */
+	public ResponseEntity<EntityModel<MarketPlace>> adicionar(@RequestBody MarketPlace marketplace) {
+		MarketPlace savedMarketplace = marketplaceServices.salvar(marketplace);
+		return ResponseEntity
+				.created(linkTo(methodOn(MarketPlaceControler.class).buscar(savedMarketplace.getId())).toUri())
+				.body(EntityModel.of(savedMarketplace,
+						linkTo(methodOn(MarketPlaceControler.class).buscar(savedMarketplace.getId())).withSelfRel(),
+						linkTo(methodOn(MarketPlaceControler.class).listar(null, null, null, null, null, null, null,
+								null, null, null, null)).withRel("marketplaces")));
 	}
 
 	// Comandos PUT
 	@PutMapping("/{marketplaceId}")
 	public ResponseEntity<?> atualizar(@PathVariable("marketplaceId") Long Id, @RequestBody MarketPlace marketplace) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome": nome,
-		 * "classificacao": classificacao,
-		 * "taxaFrete": taxaFrete,
-		 * "ativo": ativo,
-		 * "aberto": aberto,
-		 * "endereço": {
-		 * "id": id,
-		 * },
-		 * "formasDePagamento": [{
-		 * "id": id,
-		 * }]
-		 * }
-		 */
 		try {
 			Optional<MarketPlace> marketplaceAtual = marketplaceRepository.findById(Id);
-
 			if (marketplaceAtual.isPresent()) {
 				marketplace.setDataCadastro(marketplaceAtual.get().getDataCadastro());
 				BeanUtils.copyProperties(marketplace, marketplaceAtual.get(), "id", "endereço", "dataCadastro");
-				MarketPlace marketplaceSalvo = marketplaceServices.salvar(marketplaceAtual.get());
-
-				return ResponseEntity.ok(marketplaceSalvo);
+				MarketPlace updatedMarketplace = marketplaceServices.salvar(marketplaceAtual.get());
+				return ResponseEntity.ok(EntityModel.of(updatedMarketplace,
+						linkTo(methodOn(MarketPlaceControler.class).buscar(updatedMarketplace.getId())).withSelfRel(),
+						linkTo(methodOn(MarketPlaceControler.class).listar(null, null, null, null, null, null, null,
+								null, null, null, null)).withRel("marketplaces")));
 			}
-
 			return ResponseEntity.notFound().build();
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
-
 	}
 
 	// Comando PATCH
 	@PatchMapping("/{marketplaceId}")
 	public ResponseEntity<?> atualizaParcial(@PathVariable("marketplaceId") Long Id,
 			@RequestBody Map<String, Object> campos) {
-		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
-		if (marketplace.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		merge(campos, marketplace.get());
-		return atualizar(Id, marketplace.get());
+		return marketplaceRepository.findById(Id)
+				.map(marketplace -> {
+					merge(campos, marketplace);
+					marketplaceServices.salvar(marketplace);
+					return ResponseEntity.ok(EntityModel.of(marketplace,
+							linkTo(methodOn(MarketPlaceControler.class).buscar(marketplace.getId())).withSelfRel(),
+							linkTo(methodOn(MarketPlaceControler.class).listar(null, null, null, null, null, null, null,
+									null, null, null, null)).withRel("marketplaces")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/{marketplaceId}/abrir")
 	public ResponseEntity<?> abrir(@PathVariable("marketplaceId") Long Id) {
-		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
-		if (marketplace.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		marketplace.get().abrir();
-
-		return atualizar(Id, marketplace.get());
+		return marketplaceRepository.findById(Id)
+				.map(marketplace -> {
+					marketplace.abrir();
+					MarketPlace updatedMarketplace = marketplaceServices.salvar(marketplace);
+					return ResponseEntity.ok(EntityModel.of(updatedMarketplace,
+							linkTo(methodOn(MarketPlaceControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(MarketPlaceControler.class).fechar(Id)).withRel("fechar"),
+							linkTo(methodOn(MarketPlaceControler.class).desativar(Id)).withRel("desativar")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/{marketplaceId}/fechar")
 	public ResponseEntity<?> fechar(@PathVariable("marketplaceId") Long Id) {
-		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
-		if (marketplace.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		marketplace.get().fechar();
-
-		return atualizar(Id, marketplace.get());
+		return marketplaceRepository.findById(Id)
+				.map(marketplace -> {
+					marketplace.fechar();
+					MarketPlace updatedMarketplace = marketplaceServices.salvar(marketplace);
+					return ResponseEntity.ok(EntityModel.of(updatedMarketplace,
+							linkTo(methodOn(MarketPlaceControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(MarketPlaceControler.class).abrir(Id)).withRel("abrir"),
+							linkTo(methodOn(MarketPlaceControler.class).ativar(Id)).withRel("ativar")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/{marketplaceId}/ativar")
 	public ResponseEntity<?> ativar(@PathVariable("marketplaceId") Long Id) {
-		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
-		if (marketplace.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		marketplace.get().ativar();
-
-		return atualizar(Id, marketplace.get());
+		return marketplaceRepository.findById(Id)
+				.map(marketplace -> {
+					marketplace.ativar();
+					MarketPlace updatedMarketplace = marketplaceServices.salvar(marketplace);
+					return ResponseEntity.ok(EntityModel.of(updatedMarketplace,
+							linkTo(methodOn(MarketPlaceControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(MarketPlaceControler.class).desativar(Id)).withRel("desativar")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@PatchMapping("/{marketplaceId}/desativar")
 	public ResponseEntity<?> desativar(@PathVariable("marketplaceId") Long Id) {
-		Optional<MarketPlace> marketplace = marketplaceRepository.findById(Id);
-
-		if (marketplace.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		marketplace.get().desativar();
-
-		return atualizar(Id, marketplace.get());
+		return marketplaceRepository.findById(Id)
+				.map(marketplace -> {
+					marketplace.desativar();
+					MarketPlace updatedMarketplace = marketplaceServices.salvar(marketplace);
+					return ResponseEntity.ok(EntityModel.of(updatedMarketplace,
+							linkTo(methodOn(MarketPlaceControler.class).buscar(Id)).withSelfRel(),
+							linkTo(methodOn(MarketPlaceControler.class).ativar(Id)).withRel("ativar")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	private void merge(Map<String, Object> camposOrigem, MarketPlace marketplaceDestino) {
@@ -307,18 +337,23 @@ public class MarketPlaceControler {
 
 	// Comandos DELET
 	@DeleteMapping("/{marketplaceId}")
-	public ResponseEntity<MarketPlace> remover(@PathVariable("marketplaceId") Long Id) {
+	public ResponseEntity<?> remover(@PathVariable("marketplaceId") Long Id) {
 		try {
-
 			marketplaceServices.excluir(Id);
-			return ResponseEntity.noContent().build();
-
+			return ResponseEntity.noContent()
+					.header("Location",
+							linkTo(methodOn(MarketPlaceControler.class).listar(null, null, null, null, null, null, null,
+									null, null, null, null)).toUri().toString())
+					.build();
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.notFound().build();
 		} catch (DataIntegrityViolationException e) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body(EntityModel.of(null,
+							linkTo(methodOn(MarketPlaceControler.class).buscar(Id)).withRel(IanaLinkRelations.SELF),
+							linkTo(methodOn(MarketPlaceControler.class).listar(null, null, null, null, null, null, null,
+									null, null, null, null)).withRel("marketplaces")));
 		}
-
 	}
 
 }
