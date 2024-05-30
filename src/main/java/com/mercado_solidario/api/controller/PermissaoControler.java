@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Predicate;
 
@@ -12,6 +13,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -33,6 +36,9 @@ import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.PermissaoRepository;
 import com.mercado_solidario.api.service.PermissaoServices;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping(value = "/permissoes")
 public class PermissaoControler {
@@ -45,7 +51,7 @@ public class PermissaoControler {
 
 	// Comando GET
 	@GetMapping
-	public List<Permissao> listar(
+	public CollectionModel<EntityModel<Permissao>> listar(
 			@RequestParam(required = false) String nome,
 			@RequestParam(required = false) String sigla) {
 		Specification<Permissao> spec = (root, query, criteriaBuilder) -> {
@@ -56,61 +62,67 @@ public class PermissaoControler {
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
-		return permissaoRepository.findAll(spec);
+		List<EntityModel<Permissao>> permissoes = permissaoRepository.findAll(spec)
+				.stream()
+				.map(permissao -> EntityModel.of(permissao,
+						linkTo(methodOn(PermissaoControler.class).buscar(permissao.getId())).withRel("buscar"),
+						linkTo(methodOn(PermissaoControler.class).listar(nome, sigla)).withSelfRel()))
+				.collect(Collectors.toList());
+
+		return CollectionModel.of(permissoes,
+				linkTo(methodOn(PermissaoControler.class).listar(nome, sigla)).withSelfRel());
 	}
 
 	// @PreAuthorize("hasAuthority('POST_PATCH_ALLOWED')")
 	@GetMapping("/{permissaoId}") // -> /permissoes/permissaoId
-	public ResponseEntity<Permissao> buscar(@PathVariable("permissaoId") Long Id) {
-		Optional<Permissao> permissao = permissaoRepository.findById(Id);
-
-		if (permissao.isPresent()) {
-			return ResponseEntity.ok(permissao.get());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<Permissao>> buscar(@PathVariable("permissaoId") Long Id) {
+		return permissaoRepository.findById(Id)
+				.map(permissao -> EntityModel.of(permissao,
+						linkTo(methodOn(PermissaoControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(PermissaoControler.class).listar(null, null)).withRel("permissoes")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando POST
 	// @PostAuthorize()
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Permissao adicionar(@RequestBody Permissao permissao) {
-		return permissaoServices.salvar(permissao);
+	public EntityModel<Permissao> adicionar(@RequestBody Permissao permissao) {
+		Permissao savedPermissao = permissaoServices.salvar(permissao);
+		return EntityModel.of(savedPermissao,
+				linkTo(methodOn(PermissaoControler.class).buscar(savedPermissao.getId())).withRel("buscar"),
+				linkTo(methodOn(PermissaoControler.class).listar(null, null)).withRel("permissoes"));
 	}
 
 	// Comandos PUT
 	@PutMapping("/{permissaoId}")
-	public ResponseEntity<?> atualizar(@PathVariable("permissaoId") Long Id, @RequestBody Permissao permissao) {
-		try {
-			Optional<Permissao> permissaoAtual = permissaoRepository.findById(Id);
-
-			if (permissaoAtual.isPresent()) {
-				BeanUtils.copyProperties(permissao, permissaoAtual.get(), "id");
-				Permissao permissaoSalvo = permissaoServices.salvar(permissaoAtual.get());
-
-				return ResponseEntity.ok(permissaoSalvo);
-			}
-
-			return ResponseEntity.notFound().build();
-		} catch (EntidadeNaoEncontradaExeption e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		}
-
+	public ResponseEntity<EntityModel<Permissao>> atualizar(@PathVariable("permissaoId") Long id,
+			@RequestBody Permissao permissao) {
+		return permissaoRepository.findById(id)
+				.map(permissaoExistente -> {
+					BeanUtils.copyProperties(permissao, permissaoExistente, "id");
+					Permissao savedPermissao = permissaoServices.salvar(permissaoExistente);
+					return ResponseEntity.ok(EntityModel.of(savedPermissao,
+							linkTo(methodOn(PermissaoControler.class).buscar(id)).withSelfRel(),
+							linkTo(methodOn(PermissaoControler.class).listar(null, null)).withRel("all-permissoes")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando PATCH
 	@PatchMapping("/{permissaoId}")
-	public ResponseEntity<?> atualizaParcial(@PathVariable("permissaoId") Long Id,
+	public ResponseEntity<?> atualizaParcial(@PathVariable("permissaoId") Long id,
 			@RequestBody Map<String, Object> campos) {
-		Optional<Permissao> marketPlace = permissaoRepository.findById(Id);
-
-		if (marketPlace.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		merge(campos, marketPlace.get());
-		return atualizar(Id, marketPlace.get());
+		return permissaoRepository.findById(id)
+				.map(permissao -> {
+					merge(campos, permissao);
+					Permissao updatedPermissao = permissaoServices.salvar(permissao);
+					return ResponseEntity.ok(EntityModel.of(updatedPermissao,
+							linkTo(methodOn(PermissaoControler.class).buscar(id)).withSelfRel(),
+							linkTo(methodOn(PermissaoControler.class).listar(null, null)).withRel("all-permissoes")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	private void merge(Map<String, Object> camposOrigem, Permissao permissaoDestino) {
@@ -128,16 +140,12 @@ public class PermissaoControler {
 
 	// Comandos DELET
 	@DeleteMapping("/{permissaoId}")
-	public ResponseEntity<Permissao> remover(@PathVariable("permissaoId") Long Id) {
-		try {
-
-			permissaoServices.excluir(Id);
-			return ResponseEntity.noContent().build();
-
-		} catch (EntidadeNaoEncontradaExeption e) {
-			return ResponseEntity.notFound().build();
-		} catch (DataIntegrityViolationException e) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
-		}
+	public ResponseEntity<?> remover(@PathVariable("permissaoId") Long id) {
+		return permissaoRepository.findById(id)
+				.map(permissao -> {
+					permissaoServices.excluir(id);
+					return ResponseEntity.noContent().build();
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 }
