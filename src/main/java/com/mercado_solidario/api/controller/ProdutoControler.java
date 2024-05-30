@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.Predicate;
 
@@ -13,6 +14,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
@@ -35,6 +38,9 @@ import com.mercado_solidario.api.execption.EntidadeNaoEncontradaExeption;
 import com.mercado_solidario.api.repository.ProdutoRepository;
 import com.mercado_solidario.api.service.ProdutoServices;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping(value = "/produtos")
 public class ProdutoControler {
@@ -47,7 +53,7 @@ public class ProdutoControler {
 
 	// Comando GET
 	@GetMapping
-	public List<Produto> listar(@RequestParam(required = false) String nome,
+	public ResponseEntity<CollectionModel<EntityModel<Produto>>> listar(@RequestParam(required = false) String nome,
 			@RequestParam(required = false) BigDecimal menorPreco,
 			@RequestParam(required = false) BigDecimal maiorPreco,
 			@RequestParam(required = false) Boolean disponivel,
@@ -90,19 +96,28 @@ public class ProdutoControler {
 			}
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
 		};
-		return produtoRepository.findAll(spec);
+		List<EntityModel<Produto>> produtos = produtoRepository.findAll(spec)
+				.stream()
+				.map(produto -> EntityModel.of(produto,
+						linkTo(methodOn(ProdutoControler.class).buscar(produto.getId())).withRel("self"),
+						linkTo(methodOn(ProdutoControler.class).listar(nome, menorPreco, maiorPreco, disponivel,
+								natureza, origem, categoria)).withRel("all-produtos")))
+				.collect(Collectors.toList());
 
+		return ResponseEntity.ok(CollectionModel.of(produtos,
+				linkTo(methodOn(ProdutoControler.class).listar(nome, menorPreco, maiorPreco, disponivel, natureza,
+						origem, categoria)).withSelfRel()));
 	}
 
 	@GetMapping("/{produtoId}") // -> /produtos/prdutoId
-	public ResponseEntity<Produto> buscar(@PathVariable("produtoId") Long Id) {
-		Optional<Produto> produto = produtoRepository.findById(Id);
-
-		if (produto.isPresent()) {
-			return ResponseEntity.ok(produto.get());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<Produto>> buscar(@PathVariable("produtoId") Long id) {
+		return produtoRepository.findById(id)
+				.map(produto -> EntityModel.of(produto,
+						linkTo(methodOn(ProdutoControler.class).buscar(id)).withSelfRel(),
+						linkTo(methodOn(ProdutoControler.class).listar(null, null, null, null, null, null, null))
+								.withRel("all-produtos")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	/*
@@ -124,65 +139,53 @@ public class ProdutoControler {
 
 	// -> /produtos/por-nome?nome=nome_buscado
 	@GetMapping("/fornecedor/{produtoId}")
-	public ResponseEntity<Fornecedor> FornecedorPorProduto(@PathVariable("produtoId") Long Id) {
-		Optional<Produto> produto = produtoRepository.findById(Id);
-
-		if (produto.isPresent()) {
-			return ResponseEntity.ok(produto.get().getFornecedor());
-		}
-
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<EntityModel<Fornecedor>> FornecedorPorProduto(@PathVariable("produtoId") Long id) {
+		return produtoRepository.findById(id)
+				.map(produto -> EntityModel.of(produto.getFornecedor(),
+						linkTo(methodOn(ProdutoControler.class).FornecedorPorProduto(id)).withSelfRel(),
+						linkTo(methodOn(ProdutoControler.class).buscar(id)).withRel("produto")))
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando POST
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Produto adicionar(@RequestBody Produto produto) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome": nome,
-		 * "descricao": descricao,
-		 * "preco": preco,
-		 * "ativo": ativo,
-		 * "natureza": natureza,
-		 * "origem": origem,
-		 * "categoria": categoria
-		 * }
-		 */
-		return produtoServices.salvar(produto);
+	public ResponseEntity<EntityModel<Produto>> adicionar(@RequestBody Produto produto) {
+		Produto savedProduto = produtoServices.salvar(produto);
+		return ResponseEntity.created(linkTo(methodOn(ProdutoControler.class).buscar(savedProduto.getId())).toUri())
+				.body(EntityModel.of(savedProduto,
+						linkTo(methodOn(ProdutoControler.class).buscar(savedProduto.getId())).withSelfRel(),
+						linkTo(methodOn(ProdutoControler.class).listar(null, null, null, null, null, null, null))
+								.withRel("all-produtos")));
 	}
+	/*
+	 * Modelo:
+	 * {
+	 * "nome": nome,
+	 * "descricao": descricao,
+	 * "preco": preco,
+	 * "ativo": ativo,
+	 * "natureza": natureza,
+	 * "origem": origem,
+	 * "categoria": categoria
+	 * }
+	 */
 
 	// Comandos PUT
 	@PutMapping("/{produtoId}")
-	public ResponseEntity<?> atualizar(@PathVariable("produtoId") Long Id, @RequestBody Produto produto) {
-		/*
-		 * Modelo:
-		 * {
-		 * "nome": nome,
-		 * "descricao": descricao,
-		 * "preco": preco,
-		 * "ativo": ativo,
-		 * "natureza": natureza,
-		 * "origem": origem,
-		 * "categoria": categoria
-		 * }
-		 */
-		try {
-			Optional<Produto> produtoAtual = produtoRepository.findById(Id);
-
-			if (produtoAtual.isPresent()) {
-				BeanUtils.copyProperties(produto, produtoAtual.get(), "id");
-				Produto produtoSalvo = produtoServices.salvar(produtoAtual.get());
-
-				return ResponseEntity.ok(produtoSalvo);
-			}
-
-			return ResponseEntity.notFound().build();
-		} catch (EntidadeNaoEncontradaExeption e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		}
-
+	public ResponseEntity<EntityModel<Produto>> atualizar(@PathVariable("produtoId") Long id,
+			@RequestBody Produto produto) {
+		return produtoRepository.findById(id)
+				.map(produtoExistente -> {
+					BeanUtils.copyProperties(produto, produtoExistente, "id");
+					Produto savedProduto = produtoServices.salvar(produtoExistente);
+					return ResponseEntity.ok(EntityModel.of(savedProduto,
+							linkTo(methodOn(ProdutoControler.class).buscar(id)).withSelfRel(),
+							linkTo(methodOn(ProdutoControler.class).listar(null, null, null, null, null, null, null))
+									.withRel("all-produtos")));
+				})
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Comando PATCH
@@ -214,18 +217,16 @@ public class ProdutoControler {
 
 	// Comandos DELET
 	@DeleteMapping("/{produtoId}")
-	public ResponseEntity<Produto> remover(@PathVariable("produtoId") Long Id) {
+	public ResponseEntity<?> remover(@PathVariable Long usuarioId) {
 		try {
-
-			produtoServices.excluir(Id);
-			return ResponseEntity.noContent().build();
-
+			produtoServices.excluir(usuarioId);
+			return ResponseEntity.ok(EntityModel.of(null,
+					linkTo(methodOn(ProdutoControler.class).listar(null, null, null, null, null, null, null))
+							.withRel("allProdutos")));
 		} catch (EntidadeNaoEncontradaExeption e) {
 			return ResponseEntity.notFound().build();
 		} catch (DataIntegrityViolationException e) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).build();
 		}
-
 	}
-
 }
