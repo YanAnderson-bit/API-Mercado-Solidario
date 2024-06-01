@@ -82,6 +82,7 @@ public class CidadeControler {
 		return cidadeRepository.findById(Id)
 				.map(cidade -> EntityModel.of(cidade,
 						linkTo(methodOn(CidadeControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(CidadeControler.class).remover(Id)).withRel("delete"),
 						linkTo(methodOn(CidadeControler.class).listar(null, null)).withRel("cidades")))
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());

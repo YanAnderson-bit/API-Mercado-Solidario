@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 insert into estado ( nome, sigla) values ( 'Minas Gerais', 'MG');
 insert into estado ( nome, sigla) values ( 'São Paulo', 'SP');
 insert into estado ( nome, sigla) values ( 'Ceará', 'CE');
