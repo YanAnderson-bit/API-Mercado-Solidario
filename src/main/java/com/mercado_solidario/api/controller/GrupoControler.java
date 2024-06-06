@@ -82,6 +82,7 @@ public class GrupoControler {
 		return grupoRepository.findById(Id)
 				.map(grupo -> EntityModel.of(grupo,
 						linkTo(methodOn(GrupoControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(GrupoControler.class).remover(Id)).withRel("delete"),
 						linkTo(methodOn(GrupoControler.class).listar(null, null)).withRel("grupos")))
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());

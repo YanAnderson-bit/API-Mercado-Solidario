@@ -95,6 +95,7 @@ public class FornecedorControler {
 		return fornecedorRepository.findById(Id)
 				.map(fornecedor -> EntityModel.of(fornecedor,
 						linkTo(methodOn(FornecedorControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(FornecedorControler.class).remover(Id)).withRel("delete"),
 						linkTo(methodOn(FornecedorControler.class).listar(null, null, null)).withRel("fornecedores")))
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());

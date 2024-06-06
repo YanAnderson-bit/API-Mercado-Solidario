@@ -67,6 +67,7 @@ public class FormasDePagamentoControler {
 		return formasDePagamentoRepository.findById(Id)
 				.map(formasDePagamento -> EntityModel.of(formasDePagamento,
 						linkTo(methodOn(FormasDePagamentoControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(FormasDePagamentoControler.class).remover(Id)).withRel("delete"),
 						linkTo(methodOn(FormasDePagamentoControler.class).listar()).withRel("formasDePagamento")))
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());

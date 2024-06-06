@@ -113,6 +113,8 @@ public class PedidoControler {
 						linkTo(methodOn(PedidoControler.class).buscar(Id)).withSelfRel(),
 						linkTo(methodOn(PedidoControler.class).listar(null, null, null, null, null, null))
 								.withRel("pedidos"),
+						linkTo(methodOn(PedidoControler.class).remover(Id))
+								.withRel("deletar"),
 						linkTo(methodOn(PedidoControler.class).pordutosPorPedido(Id)).withRel("produtos"),
 						linkTo(methodOn(PedidoControler.class).confirmar(Id)).withRel("confirmar"),
 						linkTo(methodOn(PedidoControler.class).entregue(Id)).withRel("entregue"),

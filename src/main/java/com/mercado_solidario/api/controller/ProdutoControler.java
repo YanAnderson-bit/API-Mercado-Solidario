@@ -114,6 +114,8 @@ public class ProdutoControler {
 		return produtoRepository.findById(id)
 				.map(produto -> EntityModel.of(produto,
 						linkTo(methodOn(ProdutoControler.class).buscar(id)).withSelfRel(),
+						linkTo(methodOn(ProdutoControler.class).remover(id))
+								.withRel("remover"),
 						linkTo(methodOn(ProdutoControler.class).listar(null, null, null, null, null, null, null))
 								.withRel("all-produtos")))
 				.map(ResponseEntity::ok)

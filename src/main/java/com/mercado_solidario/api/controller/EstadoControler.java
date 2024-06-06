@@ -81,6 +81,7 @@ public class EstadoControler {
 		return estadoRepository.findById(Id)
 				.map(estado -> EntityModel.of(estado,
 						linkTo(methodOn(EstadoControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(EstadoControler.class).remover(Id)).withRel("delete"),
 						linkTo(methodOn(EstadoControler.class).listar(null, null)).withRel("estados")))
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());

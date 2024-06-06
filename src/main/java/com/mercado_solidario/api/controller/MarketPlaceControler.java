@@ -138,10 +138,19 @@ public class MarketPlaceControler {
 		return marketplaceRepository.findById(Id)
 				.map(marketplace -> EntityModel.of(marketplace,
 						linkTo(methodOn(MarketPlaceControler.class).buscar(Id)).withSelfRel(),
+						linkTo(methodOn(MarketPlaceControler.class).remover(Id)).withRel("delete"),
 						linkTo(methodOn(MarketPlaceControler.class).listar(null, null, null, null, null, null, null,
 								null, null, null, null)).withRel("marketplaces"),
 						linkTo(methodOn(MarketPlaceControler.class).FornecedoresPorMarketPlaces(Id))
 								.withRel("fornecedores"),
+						linkTo(methodOn(MarketPlaceControler.class).abrir(Id))
+								.withRel("abrir"),
+						linkTo(methodOn(MarketPlaceControler.class).ativar(Id))
+								.withRel("ativar"),
+						linkTo(methodOn(MarketPlaceControler.class).fechar(Id))
+								.withRel("fechar"),
+						linkTo(methodOn(MarketPlaceControler.class).desativar(Id))
+								.withRel("desativar"),
 						linkTo(methodOn(MarketPlaceControler.class).ProdutosPorMarketPlaces(Id)).withRel("produtos"),
 						linkTo(methodOn(MarketPlaceControler.class).PedidosPorMarketPlaces(Id)).withRel("pedidos")))
 				.map(ResponseEntity::ok)
