@@ -12,9 +12,7 @@ services:
       - mercado-solidario-network
   
   mercado-solidario-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: mantuscola/mercado-solidario-api:latest
     depends_on:
       - mysql
     env_file:
